@@ -1,0 +1,10 @@
+[package]
+name = "gather_files"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.39"
+walkdir = "2.5.0"
+globset = "0.4.15"
+clap = "4.5.23"
