@@ -38,7 +38,7 @@ fn main() {
 max_lines=1000
 max_file_size=500000
 skip_binary=yes
-output_dir=
+output_dir=gather
 
 [exclude]
 .git
