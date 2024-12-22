@@ -22,7 +22,13 @@ cargo install --git https://github.com/herring101/gather_files
 
 #### Windows
 ```powershell
-irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 | iex
+# オプション1: 自動インストール（PowerShellを管理者として実行）
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1'))
+
+# オプション2: 手動インストール
+# 1. GitHub Releasesページから `gather_files-windows-amd64.exe` をダウンロード
+# 2. %USERPROFILE%\.cargo\bin\ に配置（フォルダがない場合は作成）
+# 3. ファイル名を gather_files.exe に変更
 ```
 
 #### Linux/macOS
