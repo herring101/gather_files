@@ -11,7 +11,11 @@ pub struct CLIOptions {
     pub extra_exclude_patterns: Vec<String>,
     pub extra_skip_patterns: Vec<String>,
     pub include_exts: Vec<String>,
-    pub init_config: bool, // --init-config
+
+    // --- ここから変更 ---
+    pub use_timestamp: bool, // --timestamp
+    pub no_open: bool,       // --no-open
+                             // --- ここまで変更 ---
 }
 
 /// 設定ファイル(.gather) + CLIを合体して最終的に使うパラメータ
@@ -20,8 +24,8 @@ pub struct ConfigParams {
     pub max_lines: usize,
     pub max_file_size: Option<u64>,
     pub skip_binary: bool,
-    /// 出力先ディレクトリ（[settings] output_dir=xxx）を使う
-    /// ただし CLI で -o を指定した場合はそちらが優先される想定
+    /// 出力先ディレクトリの代わりに、今回の仕様では固定ファイル名を優先するが、
+    /// 既存コードを最小限変更するために残しておく
     pub output_dir: Option<String>,
 
     /// 除外ファイル / フォルダパターン

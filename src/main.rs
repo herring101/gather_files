@@ -10,7 +10,7 @@ use crate::scanner::run;
 use chrono::Local;
 use std::fs;
 use std::path::PathBuf;
-use std::process;
+use std::process::{self, Command};
 
 fn main() {
     // 1) CLIオプション取得
@@ -25,63 +25,74 @@ fn main() {
         process::exit(1);
     }
 
-    // 3) --init-config: サンプル .gather を作成して終了
-    if cli_opts.init_config {
-        let default_path = cli_opts.target_dir.join(".gather");
-        if default_path.exists() {
-            eprintln!("既に設定ファイルが存在します: {}", default_path.display());
-        } else {
-            // これがサンプル: 縦書きでフォルダ除外などを記載
-            let sample = r#"[settings]
-max_lines=1000
-max_file_size=500000
-skip_binary=yes
-output_dir=out
-
-[exclude]
-.git
-target/
-*.log
-
-[skip]
-*.md
-*.pdf
-
-[include]
-.rs
-.py
-"#;
-            match fs::write(&default_path, sample) {
-                Ok(_) => {
-                    eprintln!(".gatherファイルを生成しました: {}", default_path.display());
-                }
-                Err(e) => {
-                    eprintln!("作成に失敗しました: {}", e);
-                    process::exit(1);
-                }
-            }
-        }
-        process::exit(0);
-    }
-
-    // 4) .gather 読み込み (なければデフォルト)
-    let config_file = cli_opts
+    // 3) .gather パスを決定
+    let gather_path = cli_opts
         .config_file
         .clone()
         .unwrap_or_else(|| cli_opts.target_dir.join(".gather"));
-    let mut config_params = load_config_file(&config_file);
 
-    // 5) CLIオプションを上書き & 結合
-    // (a) settings セクション相当: max_lines, max_file_size, skip_binary, output_dir は CLI優先
+    // 4) .gather が無ければ自動生成
+    if !gather_path.exists() {
+        // -- デフォルト内容: [settings], [exclude], [skip], [include] をすべて含む --
+        let sample = r#"[settings]
+max_lines=1000
+max_file_size=500000
+skip_binary=yes
+output_dir=
+
+[exclude]
+.git
+gather
+.gather
+
+[skip]
+*.pdf
+
+[include]
+# (拡張子未指定の場合、すべて含む想定)
+# .py
+"#;
+
+        match fs::write(&gather_path, sample) {
+            Ok(_) => {
+                eprintln!(".gatherファイルを生成しました: {}", gather_path.display());
+                // 生成後に code で開く (no_open が指定されていない場合のみ)
+                if !cli_opts.no_open {
+                    let _ = Command::new("code").arg(&gather_path).spawn().map_err(|e| {
+                        eprintln!("Warning: VS Code を起動できませんでした: {}", e);
+                    });
+                }
+            }
+            Err(e) => {
+                eprintln!("作成に失敗しました: {}", e);
+                process::exit(1);
+            }
+        }
+    } else {
+        // 既に存在する場合、開くかどうかは好みに応じて
+        // 今回は特に開かない例 (開きたい場合は以下のようにする)
+        /*
+        if !cli_opts.no_open {
+            let _ = Command::new("code")
+                .arg(&gather_path)
+                .spawn()
+                .map_err(|e| {
+                    eprintln!("Warning: VS Code を起動できませんでした: {}", e);
+                });
+        }
+        */
+    }
+
+    // 5) .gather 読み込み
+    let mut config_params = load_config_file(&gather_path);
+
+    // 6) CLIオプションを上書き & 結合
     if let Some(m) = cli_opts.max_lines {
         config_params.max_lines = m;
     }
     if let Some(mf) = cli_opts.max_file_size {
         config_params.max_file_size = Some(mf);
     }
-    // skip_binary は今回 CLI引数で定義してないので省略
-
-    // (b) patterns 相当: exclude_patterns, skip_content_patterns, include_exts は結合
     if !cli_opts.extra_exclude_patterns.is_empty() {
         config_params
             .exclude_patterns
@@ -96,39 +107,28 @@ target/
         config_params.include_exts.extend(cli_opts.include_exts);
     }
 
-    // 6) 出力先
-    //   - もし CLI で --output があった場合はそれを優先
-    //   - なければ config_params.output_dir があればディレクトリとして使う
-    //   - それもなければ gather_{timestamp}.txt
+    // 7) 出力ファイルのパス決定
     let output_path: PathBuf = if let Some(ref out) = cli_opts.output_file {
-        // これがファイルかディレクトリかはユーザー次第
-        // いったん「拡張子がない or ディレクトリなら、その下に gather_{timestamp}.txt を生成」とする
-        if out.is_dir() || out.extension().is_none() {
-            let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
-            let file_name = format!("gather_{}.txt", ts);
-            out.join(file_name)
-        } else {
-            out.clone()
-        }
-    } else if let Some(dir) = &config_params.output_dir {
-        // 設定ファイル上で output_dir が指定されていた場合
-        let dir_path = PathBuf::from(dir);
-        if !dir_path.is_dir() {
-            // なければ作る
-            if let Err(e) = fs::create_dir_all(&dir_path) {
-                eprintln!("output_dir の作成に失敗: {}", e);
+        out.clone()
+    } else {
+        // デフォルトは gather/output.txt
+        let default_dir = cli_opts.target_dir.join("gather");
+        if !default_dir.is_dir() {
+            if let Err(e) = fs::create_dir_all(&default_dir) {
+                eprintln!("outputディレクトリの作成に失敗: {}", e);
                 process::exit(1);
             }
         }
-        let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
-        dir_path.join(format!("gather_{}.txt", ts))
-    } else {
-        // 何も指定がなければカレントに gather_{timestamp}.txt
-        let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
-        PathBuf::from(format!("gather_{}.txt", ts))
+        let file_name = if cli_opts.use_timestamp {
+            let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
+            format!("output_{}.txt", ts)
+        } else {
+            "output.txt".to_string()
+        };
+        default_dir.join(file_name)
     };
 
-    // 7) スキャナ実行
+    // 8) スキャナ実行
     if let Err(e) = run(&cli_opts.target_dir, &output_path, &config_params, &[]) {
         eprintln!("エラー: {}", e);
         process::exit(1);

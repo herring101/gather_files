@@ -20,11 +20,19 @@ pub fn parse_args() -> CLIOptions {
             Arg::new("output")
                 .long("output")
                 .short('o')
-                .help("出力ファイルのパス (ディレクトリでも可)")
+                .help("出力ファイルのパス (デフォルト: gather/output.txt)")
                 .num_args(1)
-                .value_name("FILE_OR_DIR")
+                .value_name("FILE")
                 .action(ArgAction::Set),
         )
+        // --- ここから変更: timestamp をオンオフする引数 ---
+        .arg(
+            Arg::new("use_timestamp")
+                .long("timestamp")
+                .help("出力ファイル名にタイムスタンプを付与する (デフォルトは付与しない)")
+                .action(ArgAction::SetTrue),
+        )
+        // --- ここまで変更 ---
         .arg(
             Arg::new("config_file")
                 .long("config-file")
@@ -75,12 +83,14 @@ pub fn parse_args() -> CLIOptions {
                 .action(ArgAction::Append)
                 .value_name("EXT"),
         )
+        // --- ここから変更: .gatherを自動で開かないオプション ---
         .arg(
-            Arg::new("init_config")
-                .long("init-config")
-                .help(".gather のサンプルファイルを生成して終了します")
+            Arg::new("no_open")
+                .long("no-open")
+                .help(".gather を自動で code で開くのを抑制")
                 .action(ArgAction::SetTrue),
         )
+        // --- ここまで変更 ---
         .get_matches();
 
     let target_dir_path = PathBuf::from(
@@ -115,7 +125,10 @@ pub fn parse_args() -> CLIOptions {
         .map(|vals| vals.map(|v| v.to_string()).collect())
         .unwrap_or_default();
 
-    let init_config = matches.get_flag("init_config");
+    // --- ここから変更 ---
+    let use_timestamp = matches.get_flag("use_timestamp");
+    let no_open = matches.get_flag("no_open");
+    // --- ここまで変更 ---
 
     CLIOptions {
         target_dir: target_dir_path,
@@ -126,6 +139,7 @@ pub fn parse_args() -> CLIOptions {
         extra_exclude_patterns,
         extra_skip_patterns,
         include_exts,
-        init_config,
+        use_timestamp, // 追加
+        no_open,       // 追加
     }
 }
