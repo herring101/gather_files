@@ -33,12 +33,13 @@ fn main() {
 
     // 4) .gather が無ければ自動生成
     if !gather_path.exists() {
-        // -- デフォルト内容: [settings], [exclude], [skip], [include] をすべて含む --
         let sample = r#"[settings]
 max_lines=1000
 max_file_size=500000
 skip_binary=yes
 output_dir=gather
+use_timestamp=no
+open_output=yes
 
 [exclude]
 .git
@@ -52,35 +53,15 @@ gather
 # (拡張子未指定の場合、すべて含む想定)
 # .py
 "#;
-
         match fs::write(&gather_path, sample) {
             Ok(_) => {
                 eprintln!(".gatherファイルを生成しました: {}", gather_path.display());
-                // 生成後に code で開く (no_open が指定されていない場合のみ)
-                if !cli_opts.no_open {
-                    let _ = Command::new("code").arg(&gather_path).spawn().map_err(|e| {
-                        eprintln!("Warning: VS Code を起動できませんでした: {}", e);
-                    });
-                }
             }
             Err(e) => {
                 eprintln!("作成に失敗しました: {}", e);
                 process::exit(1);
             }
         }
-    } else {
-        // 既に存在する場合、開くかどうかは好みに応じて
-        // 今回は特に開かない例 (開きたい場合は以下のようにする)
-        /*
-        if !cli_opts.no_open {
-            let _ = Command::new("code")
-                .arg(&gather_path)
-                .spawn()
-                .map_err(|e| {
-                    eprintln!("Warning: VS Code を起動できませんでした: {}", e);
-                });
-        }
-        */
     }
 
     // 5) .gather 読み込み
@@ -106,6 +87,12 @@ gather
     if !cli_opts.include_exts.is_empty() {
         config_params.include_exts.extend(cli_opts.include_exts);
     }
+    if cli_opts.use_timestamp {
+        config_params.use_timestamp = true;
+    }
+    if cli_opts.no_open {
+        config_params.open_output = false;
+    }
 
     // 7) 出力ファイルのパス決定
     let output_path: PathBuf = if let Some(ref out) = cli_opts.output_file {
@@ -119,7 +106,7 @@ gather
                 process::exit(1);
             }
         }
-        let file_name = if cli_opts.use_timestamp {
+        let file_name = if config_params.use_timestamp {
             let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
             format!("output_{}.txt", ts)
         } else {
@@ -135,4 +122,12 @@ gather
     }
 
     eprintln!("Done! Output => {}", output_path.display());
+
+    // 9) 出力ファイルを開く
+    if config_params.open_output {
+        match Command::new("code").arg(&output_path).status() {
+            Ok(_) => (),
+            Err(e) => eprintln!("Warning: VS Code で出力ファイルを開けませんでした: {}", e),
+        }
+    }
 }

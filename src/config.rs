@@ -11,6 +11,8 @@ use crate::model::ConfigParams;
 /// max_file_size=1000000
 /// skip_binary=yes
 /// output_dir=out
+/// use_timestamp=no
+/// open_output=yes
 ///
 /// [exclude]
 /// .git
@@ -46,7 +48,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
 
     for line in content.lines() {
         let line = line.trim();
-        // 空行やコメント(# など)はスキップ（必要に応じて拡張してください）
+        // 空行やコメント(# など)はスキップ
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
@@ -85,23 +87,27 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                                 params.output_dir = Some(v);
                             }
                         }
+                        "use_timestamp" => {
+                            let v_lower = v.to_lowercase();
+                            params.use_timestamp = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "open_output" => {
+                            let v_lower = v.to_lowercase();
+                            params.open_output = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
                         _ => {
-                            // 未知キーは無視か、ログ出力してもいい
                             eprintln!("Unknown setting key: {}", k);
                         }
                     }
                 }
             }
             "exclude" => {
-                // 1行につき1パターン
                 params.exclude_patterns.push(line.to_string());
             }
             "skip" => {
-                // 1行につき1パターン
                 params.skip_content_patterns.push(line.to_string());
             }
             "include" => {
-                // 1行につき1拡張子
                 params.include_exts.push(line.to_string());
             }
             _ => {

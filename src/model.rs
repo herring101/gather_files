@@ -11,11 +11,8 @@ pub struct CLIOptions {
     pub extra_exclude_patterns: Vec<String>,
     pub extra_skip_patterns: Vec<String>,
     pub include_exts: Vec<String>,
-
-    // --- ここから変更 ---
     pub use_timestamp: bool, // --timestamp
     pub no_open: bool,       // --no-open
-                             // --- ここまで変更 ---
 }
 
 /// 設定ファイル(.gather) + CLIを合体して最終的に使うパラメータ
@@ -24,16 +21,12 @@ pub struct ConfigParams {
     pub max_lines: usize,
     pub max_file_size: Option<u64>,
     pub skip_binary: bool,
-    /// 出力先ディレクトリの代わりに、今回の仕様では固定ファイル名を優先するが、
-    /// 既存コードを最小限変更するために残しておく
     pub output_dir: Option<String>,
-
-    /// 除外ファイル / フォルダパターン
     pub exclude_patterns: Vec<String>,
-    /// 内容スキップパターン
     pub skip_content_patterns: Vec<String>,
-    /// 含めたい拡張子
     pub include_exts: Vec<String>,
+    pub use_timestamp: bool, // 追加: タイムスタンプ付きの出力ファイル名を使用
+    pub open_output: bool,   // 追加: 出力ファイルをVSCodeで開く
 }
 
 impl Default for ConfigParams {
@@ -46,6 +39,8 @@ impl Default for ConfigParams {
             exclude_patterns: vec![],
             skip_content_patterns: vec![],
             include_exts: vec![],
+            use_timestamp: false, // デフォルト: false
+            open_output: true,    // デフォルト: true
         }
     }
 }
