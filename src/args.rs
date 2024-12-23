@@ -91,6 +91,12 @@ pub fn parse_args() -> CLIOptions {
                 .action(ArgAction::SetTrue),
         )
         // --- ここまで変更 ---
+        .arg(
+            Arg::new("use_gitignore")
+                .long("use-gitignore")
+                .help(".gitignoreの内容を[exclude]に追加")
+                .action(ArgAction::SetTrue),
+        )
         .get_matches();
 
     let target_dir_path = PathBuf::from(
@@ -128,6 +134,7 @@ pub fn parse_args() -> CLIOptions {
     // --- ここから変更 ---
     let use_timestamp = matches.get_flag("use_timestamp");
     let no_open = matches.get_flag("no_open");
+    let use_gitignore = matches.get_flag("use_gitignore");
     // --- ここまで変更 ---
 
     CLIOptions {
@@ -141,5 +148,6 @@ pub fn parse_args() -> CLIOptions {
         include_exts,
         use_timestamp, // 追加
         no_open,       // 追加
+        use_gitignore, // 追加
     }
 }

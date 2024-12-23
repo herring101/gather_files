@@ -1,11 +1,13 @@
 mod args;
 mod config;
+mod gitignore;
 mod model;
-mod scanner;
+mod scanner; // 追加
 
 use crate::args::parse_args;
 use crate::config::load_config_file;
-use crate::scanner::run;
+use crate::gitignore::parse_gitignore;
+use crate::scanner::run; // 追加
 
 use chrono::Local;
 use std::fs;
@@ -40,6 +42,7 @@ skip_binary=yes
 output_dir=gather
 use_timestamp=no
 open_output=yes
+use_gitignore=yes
 
 [exclude]
 .git
@@ -93,8 +96,44 @@ gather
     if cli_opts.no_open {
         config_params.open_output = false;
     }
+    if cli_opts.use_gitignore {
+        config_params.use_gitignore = true;
+    }
 
-    // 7) 出力ファイルのパス決定
+    // 7) .gitignoreの統合
+    if config_params.use_gitignore {
+        let gitignore_path = cli_opts.target_dir.join(".gitignore");
+        if gitignore_path.exists() {
+            match parse_gitignore(&gitignore_path) {
+                Ok(patterns) => {
+                    // 空でないパターンのみを追加
+                    let valid_patterns: Vec<String> =
+                        patterns.into_iter().filter(|p| !p.is_empty()).collect();
+
+                    if !valid_patterns.is_empty() {
+                        eprintln!(
+                            "Info: .gitignoreから{}個のパターンを追加します",
+                            valid_patterns.len()
+                        );
+
+                        // 重複を避けるために既存のパターンと比較
+                        for pattern in valid_patterns {
+                            if !config_params.exclude_patterns.contains(&pattern) {
+                                config_params.exclude_patterns.push(pattern);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Warning: .gitignoreの読み込みに失敗: {}", e);
+                }
+            }
+        } else {
+            eprintln!("Info: .gitignoreファイルが見つかりません");
+        }
+    }
+
+    // 8) 出力ファイルのパス決定
     let output_path: PathBuf = if let Some(ref out) = cli_opts.output_file {
         out.clone()
     } else {
@@ -115,7 +154,7 @@ gather
         default_dir.join(file_name)
     };
 
-    // 8) スキャナ実行
+    // 9) スキャナ実行
     if let Err(e) = run(&cli_opts.target_dir, &output_path, &config_params, &[]) {
         eprintln!("エラー: {}", e);
         process::exit(1);
@@ -123,7 +162,7 @@ gather
 
     eprintln!("Done! Output => {}", output_path.display());
 
-    // 9) 出力ファイルを開く
+    // 10) 出力ファイルを開く
     if config_params.open_output {
         match Command::new("code").arg(&output_path).status() {
             Ok(_) => (),
