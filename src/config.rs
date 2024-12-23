@@ -13,6 +13,7 @@ use crate::model::ConfigParams;
 /// output_dir=out
 /// use_timestamp=no
 /// open_output=yes
+/// use_gitignore=yes
 ///
 /// [exclude]
 /// .git
@@ -94,6 +95,10 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                         "open_output" => {
                             let v_lower = v.to_lowercase();
                             params.open_output = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "use_gitignore" => {
+                            let v_lower = v.to_lowercase();
+                            params.use_gitignore = ["yes", "true", "1"].contains(&v_lower.as_str());
                         }
                         _ => {
                             eprintln!("Unknown setting key: {}", k);
