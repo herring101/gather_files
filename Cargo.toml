@@ -1,7 +1,14 @@
 [package]
 name = "gather_files"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Gather project files for LLM processing"
+authors = ["herring101"]
+license = "MIT"
+repository = "https://github.com/herring101/gather_files"
+readme = "README.md"
+keywords = ["llm", "files", "gather", "development"]
+categories = ["development-tools", "command-line-utilities"]
 
 [dependencies]
 chrono = "0.4.39"
