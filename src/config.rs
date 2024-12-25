@@ -77,11 +77,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                         }
                         "skip_binary" => {
                             let v_lower = v.to_lowercase();
-                            if ["yes", "true", "1"].contains(&v_lower.as_str()) {
-                                params.skip_binary = true;
-                            } else {
-                                params.skip_binary = false;
-                            }
+                            params.skip_binary = ["yes", "true", "1"].contains(&v_lower.as_str());
                         }
                         "output_dir" => {
                             if !v.is_empty() {

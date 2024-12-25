@@ -217,12 +217,7 @@ pub fn run(
         }
     });
 
-    for e in walker_for_tree {
-        if let Ok(entry) = e {
-            entries.push(entry);
-        }
-    }
-
+    entries.extend(walker_for_tree.flatten());
     // ディレクトリもファイルも、相対パス全体でナチュラルソート
     entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
 
@@ -288,13 +283,11 @@ pub fn run(
         }
     });
 
-    for e in walker_for_files {
-        if let Ok(entry) = e {
-            if entry.file_type().is_file() {
-                file_entries.push(entry);
-            }
-        }
-    }
+    file_entries.extend(
+        walker_for_files
+            .flatten()
+            .filter(|entry| entry.file_type().is_file()),
+    );
 
     // ファイルのみ、相対パス全体でナチュラルソート
     file_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
