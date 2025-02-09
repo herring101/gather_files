@@ -54,10 +54,10 @@ curl -fsSL https://raw.githubusercontent.com/herring101/gather_files/main/instal
 
 ```bash
 # カレントディレクトリのコードを収集
-gather .
+gather_files .
 
 # 特定のディレクトリのコードを収集
-gather /path/to/project
+gather_files /path/to/project
 ```
 
 ### コマンドラインオプション
@@ -79,13 +79,13 @@ gather /path/to/project
 
 ```bash
 # 出力先を指定して最大行数を制限
-gather . -o output.txt --max-lines 500
+gather_files . -o output.txt --max-lines 500
 
 # .gitignoreを使用し、特定の拡張子のみを含める
-gather . --use-gitignore -i .rs -i .toml
+gather_files . --use-gitignore -i .rs -i .toml
 
 # カスタム除外パターンを追加
-gather . -p "*.tmp" -p "build/"
+gather_files . -p "*.tmp" -p "build/"
 ```
 
 ## 設定ファイル (.gather)
