@@ -28,11 +28,22 @@ pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
     }
     let mut builder = GlobSetBuilder::new();
     for pat in patterns {
+        // パターンの標準化
         let expanded = if pat.ends_with('/') {
-            format!("{}**", pat)
+            format!("{}**", pat) // ディレクトリパターンの場合
+        } else if pat.starts_with('.') && pat.len() > 1 && pat.chars().skip(1).all(|c| !c.is_whitespace() && c != '/') {
+            // 拡張子のみの指定の場合（例: .py）
+            format!("**/*{}", pat)
+        } else if !pat.contains('/') && !pat.contains('*') {
+            // ファイル名のみの場合
+            format!("**/{}", pat)
         } else {
+            // その他のパターン（すでに**やワイルドカードが含まれている場合はそのまま）
             pat.clone()
         };
+        
+        eprintln!("Processing pattern: '{}' -> '{}'", pat, expanded);
+        
         match Glob::new(&expanded) {
             Ok(g) => {
                 builder.add(g);
