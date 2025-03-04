@@ -91,7 +91,9 @@ gather
             .extend(cli_opts.extra_skip_patterns);
     }
     if !cli_opts.include_patterns.is_empty() {
-        config_params.include_patterns.extend(cli_opts.include_patterns);
+        config_params
+            .include_patterns
+            .extend(cli_opts.include_patterns);
     }
     if cli_opts.use_timestamp {
         config_params.use_timestamp = true;

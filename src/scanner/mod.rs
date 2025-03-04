@@ -36,7 +36,7 @@ pub fn run(
     // globsetの構築
     let exclude_globset = build_globset(&config.exclude_patterns);
     let skip_globset = build_globset(&config.skip_content_patterns);
-    
+
     // include patterns
     // 空の場合はNoneを返すので、空の場合は全ファイルを含める
     let include_globset = if config.include_patterns.is_empty() {
