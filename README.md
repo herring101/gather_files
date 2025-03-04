@@ -70,7 +70,7 @@ gather_files /path/to/project
 | --max-file-size      | なし   | スキップするファイルサイズ閾値（バイト） | なし              |
 | --patterns           | -p     | 追加の除外パターン（複数指定可）         | なし              |
 | --skip-patterns      | -s     | 追加の内容スキップパターン（複数指定可） | なし              |
-| --include-extensions | -i     | 含める拡張子（複数指定可）               | なし              |
+| --include-patterns   | -i     | 含めるファイルパターン（複数指定可）         | なし              |
 | --use-gitignore      | なし   | .gitignore の内容を[exclude]に統合       | false             |
 | --timestamp          | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
 | --no-open            | なし   | VS Code での自動オープンを無効化         | false             |
@@ -81,8 +81,8 @@ gather_files /path/to/project
 # 出力先を指定して最大行数を制限
 gather_files . -o output.txt --max-lines 500
 
-# .gitignoreを使用し、特定の拡張子のみを含める
-gather_files . --use-gitignore -i .rs -i .toml
+# .gitignoreを使用し、特定のパターンのみを含める
+gather_files . --use-gitignore -i "*.rs" -i "*.toml"
 
 # カスタム除外パターンを追加
 gather_files . -p "*.tmp" -p "build/"
@@ -132,14 +132,14 @@ temp_*        # temp_で始まるすべてのファイルを除外
 
 #### [include]セクション
 
-含める拡張子を指定します。
-指定がない場合は、すべての拡張子が対象となります。
+含めるファイルパターンを指定します。
+指定がない場合は、すべてのファイルが対象となります。
 
 ```ini
 [include]
-.rs         # Rustファイル
-.py         # Pythonファイル
-.js         # JavaScriptファイル
+*.rs         # すべてのRustファイル
+src/**/*.py   # srcディレクトリ以下のすべてのPythonファイル
+*.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
 ```
 
 ### パターンの書き方
