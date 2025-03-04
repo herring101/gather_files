@@ -20,7 +20,7 @@ pub fn run(
     target_dir: &Path,
     output_file: &Path,
     config: &ConfigParams,
-    _cli_include_exts: &[String],
+    _cli_include_patterns: &[String],
 ) -> Result<(), String> {
     let mut counter = ProcessCounter::new();
 
@@ -36,6 +36,14 @@ pub fn run(
     // globsetの構築
     let exclude_globset = build_globset(&config.exclude_patterns);
     let skip_globset = build_globset(&config.skip_content_patterns);
+    
+    // include patterns
+    // 空の場合はNoneを返すので、空の場合は全ファイルを含める
+    let include_globset = if config.include_patterns.is_empty() {
+        None
+    } else {
+        build_globset(&config.include_patterns)
+    };
 
     // ディレクトリツリーの出力
     let mut entries = collect_entries(target_dir, &exclude_globset, false);
@@ -68,13 +76,9 @@ pub fn run(
                 }
             }
 
-            // include_exts
-            if !config.include_exts.is_empty() {
-                let ext = path
-                    .extension()
-                    .map(|x| format!(".{}", x.to_string_lossy()))
-                    .unwrap_or_default();
-                if !config.include_exts.contains(&ext) {
+            // include patterns
+            if let Some(gs) = &include_globset {
+                if !gs.is_match(Path::new(&*rel_str)) {
                     counter.increment_skipped_extension();
                     continue;
                 }
@@ -116,13 +120,9 @@ pub fn run(
             }
         }
 
-        // include_exts
-        if !config.include_exts.is_empty() {
-            let ext = path
-                .extension()
-                .map(|x| format!(".{}", x.to_string_lossy()))
-                .unwrap_or_default();
-            if !config.include_exts.contains(&ext) {
+        // include patterns
+        if let Some(gs) = &include_globset {
+            if !gs.is_match(Path::new(&*rel_str)) {
                 counter.increment_skipped_extension();
                 continue;
             }
