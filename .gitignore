@@ -1,8 +1,4 @@
-# .gitignoreの変更を追加
-git add .gitignore
-
-# コミット
-git commit -m "Remove gather/output.txt from tracking and update .gitignore"
-
-# プッシュ
-git push origin feature/fix-include-patterns-for-tree
+/target
+Cargo.lock
+.gather
+/gather/*.txt
