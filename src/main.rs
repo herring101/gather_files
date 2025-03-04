@@ -2,12 +2,12 @@ mod args;
 mod config;
 mod gitignore;
 mod model;
-mod scanner; // 追加
+mod scanner;
 
 use crate::args::parse_args;
 use crate::config::load_config_file;
 use crate::gitignore::parse_gitignore;
-use crate::scanner::run; // 追加
+use crate::scanner::run;
 
 use chrono::Local;
 use std::fs;
