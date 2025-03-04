@@ -56,6 +56,41 @@ pub fn run(
             Ok(r) => r,
             Err(_) => path,
         };
+        let rel_str = rel.to_string_lossy().to_string();
+
+        // exclude
+        if let Some(gs) = &exclude_globset {
+            if gs.is_match(Path::new(&*rel_str)) {
+                continue;
+            }
+        }
+
+        // include patterns - ディレクトリツリーにも適用
+        if let Some(gs) = &include_globset {
+            // ディレクトリの場合は、その配下に含まれるファイルが[include]パターンに
+            // マッチするかどうかを確認する必要がある
+            if path.is_dir() {
+                // ディレクトリそのもののパスがマッチするかチェック
+                let dir_matches = gs.is_match(Path::new(&*rel_str));
+
+                // ディレクトリ配下のファイルがマッチするかチェック
+                // 例: dir/が含まれていなくても、dir/file.pyがマッチする場合はdirを表示
+                let dir_with_wildcard = if rel_str.ends_with('/') {
+                    format!("{}**", rel_str)
+                } else {
+                    format!("{}//**", rel_str)
+                };
+
+                let children_match = gs.is_match(Path::new(&dir_with_wildcard));
+
+                if !dir_matches && !children_match {
+                    continue;
+                }
+            } else if !gs.is_match(Path::new(&*rel_str)) {
+                // ファイルの場合は単純にパターンマッチ
+                continue;
+            }
+        }
 
         if path.is_dir() {
             let level = rel.components().count();
@@ -66,24 +101,6 @@ pub fn run(
                 .unwrap_or_default();
             writeln!(outfile, "{}{}/", indent, name).ok();
         } else {
-            let rel_str = rel.to_string_lossy();
-
-            // exclude
-            if let Some(gs) = &exclude_globset {
-                if gs.is_match(Path::new(&*rel_str)) {
-                    counter.increment_skipped_pattern();
-                    continue;
-                }
-            }
-
-            // include patterns
-            if let Some(gs) = &include_globset {
-                if !gs.is_match(Path::new(&*rel_str)) {
-                    counter.increment_skipped_extension();
-                    continue;
-                }
-            }
-
             let level = rel.components().count();
             let indent = "    ".repeat(level.saturating_sub(1));
             let name = path

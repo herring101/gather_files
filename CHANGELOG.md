@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.2.3] - 2025-03-04
+
+### Fixed
+- [include]セクションの問題修正
+  - ディレクトリツリー出力に対しても[include]パターンを適用
+  - 拡張子だけの指定（例：`.py`）を`**/*.py`に変換
+  - 単純なファイル名パターンの扱いを改善
+
+[v0.2.3]: https://github.com/herring101/gather_files/compare/v0.2.2...v0.2.3
+
 ## [v0.2.2] - 2025-03-04
 
 ### Changed
