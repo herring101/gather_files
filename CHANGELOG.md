@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.2.2] - 2025-03-04
+
+### Changed
+- [include]セクションの機能強化
+  - 拡張子だけでなく、様々なグロブパターンをサポート
+  - 例
+    - `*.md`
+    - `src/**/*.rs`
+    - `*.{js,ts}`
+- .gatherテンプレートの改善
+  - より詳細な使用例とコメントを追加
+
+[v0.2.2]: https://github.com/herring101/gather_files/compare/v0.2.1...v0.2.2
+
 ## [v0.2.1] - 2024-12-25
 
 ### Changed
