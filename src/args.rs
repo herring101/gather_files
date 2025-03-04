@@ -4,10 +4,10 @@ use std::path::PathBuf;
 
 /// CLIオプションを clap でパース
 pub fn parse_args() -> CLIOptions {
-    let matches = Command::new("gather")
-        .version("0.1.0")
-        .author("Your Name")
-        .about("Collect files recursively and output them as text.")
+    let matches = Command::new("gather_files")
+        .version("0.2.3")
+        .author("herring101")
+        .about("Collect files recursively and output them as text for LLM processing.")
         .arg(
             Arg::new("target_directory")
                 .help("解析したいディレクトリを指定")
@@ -131,11 +131,9 @@ pub fn parse_args() -> CLIOptions {
         .map(|vals| vals.map(|v| v.to_string()).collect())
         .unwrap_or_default();
 
-    // --- ここから変更 ---
     let use_timestamp = matches.get_flag("use_timestamp");
     let no_open = matches.get_flag("no_open");
     let use_gitignore = matches.get_flag("use_gitignore");
-    // --- ここまで変更 ---
 
     CLIOptions {
         target_dir: target_dir_path,
@@ -146,8 +144,8 @@ pub fn parse_args() -> CLIOptions {
         extra_exclude_patterns,
         extra_skip_patterns,
         include_patterns,
-        use_timestamp, // 追加
-        no_open,       // 追加
-        use_gitignore, // 追加
+        use_timestamp,
+        no_open,
+        use_gitignore,
     }
 }
