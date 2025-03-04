@@ -113,7 +113,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                 params.skip_content_patterns.push(line.to_string());
             }
             "include" => {
-                params.include_exts.push(line.to_string());
+                params.include_patterns.push(line.to_string());
             }
             _ => {
                 // それ以外のセクションや行は無視

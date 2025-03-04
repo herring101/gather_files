@@ -76,12 +76,12 @@ pub fn parse_args() -> CLIOptions {
                 .value_name("PATTERN"),
         )
         .arg(
-            Arg::new("include_extensions")
-                .long("include-extensions")
+            Arg::new("include_patterns")
+                .long("include-patterns")
                 .short('i')
-                .help("含めたい拡張子 (1つずつ複数回指定可)")
+                .help("含めたいファイルパターン (1つずつ複数回指定可)")
                 .action(ArgAction::Append)
-                .value_name("EXT"),
+                .value_name("PATTERN"),
         )
         // --- ここから変更: .gatherを自動で開かないオプション ---
         .arg(
@@ -126,8 +126,8 @@ pub fn parse_args() -> CLIOptions {
         .map(|vals| vals.map(|v| v.to_string()).collect())
         .unwrap_or_default();
 
-    let include_exts = matches
-        .get_many::<String>("include_extensions")
+    let include_patterns = matches
+        .get_many::<String>("include_patterns")
         .map(|vals| vals.map(|v| v.to_string()).collect())
         .unwrap_or_default();
 
@@ -145,7 +145,7 @@ pub fn parse_args() -> CLIOptions {
         max_file_size,
         extra_exclude_patterns,
         extra_skip_patterns,
-        include_exts,
+        include_patterns,
         use_timestamp, // 追加
         no_open,       // 追加
         use_gitignore, // 追加

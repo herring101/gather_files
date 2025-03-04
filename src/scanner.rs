@@ -201,8 +201,13 @@ pub fn run(
     let exclude_globset = build_globset(&config.exclude_patterns);
     let skip_globset = build_globset(&config.skip_content_patterns);
 
-    // include_exts
-    let all_exts = &config.include_exts;
+    // include patterns
+    // 空の場合はNoneを返すので、空の場合は全ファイルを含める
+    let include_globset = if config.include_patterns.is_empty() {
+        None
+    } else {
+        build_globset(&config.include_patterns)
+    };
 
     // --------------------------------------------------
     // (1) ディレクトリツリーを出力
@@ -253,13 +258,10 @@ pub fn run(
                     continue;
                 }
             }
-            // include_exts
-            if !all_exts.is_empty() {
-                let ext = path
-                    .extension()
-                    .map(|x| format!(".{}", x.to_string_lossy()))
-                    .unwrap_or_default();
-                if !all_exts.contains(&ext) {
+            // include patterns
+            if let Some(gs) = &include_globset {
+                // include_patternsが空でない場合のみチェック
+                if !gs.is_match(Path::new(&*rel_str)) {
                     continue;
                 }
             }
@@ -284,6 +286,25 @@ pub fn run(
         if entry.file_type().is_dir() {
             !should_skip_dir(entry, target_dir, &exclude_globset)
         } else {
+            let rel = match entry.path().strip_prefix(target_dir) {
+                Ok(r) => r,
+                Err(_) => entry.path(),
+            };
+            let rel_str = rel.to_string_lossy();
+
+            // exclude
+            if let Some(gs) = &exclude_globset {
+                if gs.is_match(Path::new(&*rel_str)) {
+                    return false;
+                }
+            }
+            // include patterns
+            if let Some(gs) = &include_globset {
+                // include_patternsが空でない場合のみチェック
+                if !gs.is_match(Path::new(&*rel_str)) {
+                    return false;
+                }
+            }
             true
         }
     });
@@ -309,23 +330,6 @@ pub fn run(
             Err(_) => path,
         };
         let rel_str = rel.to_string_lossy();
-
-        // exclude
-        if let Some(gs) = &exclude_globset {
-            if gs.is_match(Path::new(&*rel_str)) {
-                continue;
-            }
-        }
-        // include_exts
-        if !all_exts.is_empty() {
-            let ext = path
-                .extension()
-                .map(|x| format!(".{}", x.to_string_lossy()))
-                .unwrap_or_default();
-            if !all_exts.contains(&ext) {
-                continue;
-            }
-        }
 
         eprintln!("({}/{}) Processing: {}", count, total, path.display());
         count += 1;
