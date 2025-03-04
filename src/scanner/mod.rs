@@ -72,7 +72,7 @@ pub fn run(
             if path.is_dir() {
                 // ディレクトリそのもののパスがマッチするかチェック
                 let dir_matches = gs.is_match(Path::new(&*rel_str));
-                
+
                 // ディレクトリ配下のファイルがマッチするかチェック
                 // 例: dir/が含まれていなくても、dir/file.pyがマッチする場合はdirを表示
                 let dir_with_wildcard = if rel_str.ends_with('/') {
@@ -80,9 +80,9 @@ pub fn run(
                 } else {
                     format!("{}//**", rel_str)
                 };
-                
+
                 let children_match = gs.is_match(Path::new(&dir_with_wildcard));
-                
+
                 if !dir_matches && !children_match {
                     continue;
                 }

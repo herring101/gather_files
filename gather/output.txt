@@ -1,0 +1,1562 @@
+```
+CHANGELOG.md
+CONTRIBUTING.md
+README.md
+    args.rs
+    config.rs
+    gitignore.rs
+    main.rs
+    model.rs
+        counter.rs
+        mod.rs
+        sort.rs
+        utils.rs
+        walker.rs
+```
+
+### CHANGELOG.md
+```
+# Changelog
+
+## [v0.2.2] - 2025-03-04
+
+### Changed
+- [include]セクションの機能強化
+  - 拡張子だけでなく、様々なグロブパターンをサポート
+  - 例
+    - `*.md`
+    - `src/**/*.rs`
+    - `*.{js,ts}`
+- .gatherテンプレートの改善
+  - より詳細な使用例とコメントを追加
+
+[v0.2.2]: https://github.com/herring101/gather_files/compare/v0.2.1...v0.2.2
+
+## [v0.2.1] - 2024-12-25
+
+### Changed
+- ファイル処理情報の改善
+  - 処理済み/スキップファイルの詳細なカウント表示
+  - 処理サマリーの追加（合計、スキップ理由等）
+- コードベースの改善
+  - scanner.rsの整理（モジュール分割）
+  - コード品質の向上
+
+[v0.2.1]: https://github.com/herring101/gather_files/compare/v0.2.0...v0.2.1
+
+## [v0.2.0] - 2024-12-23
+
+### Added
+- .gitignoreの内容を[exclude]セクションに統合する機能
+  - `--use-gitignore`フラグでCLIから制御可能
+  - .gatherファイルの`use_gitignore`設定で制御可能
+  - 重複パターンは自動的に除外
+
+### Changed
+- .gatherファイルのデフォルトテンプレートを更新
+  - `use_gitignore=yes`をデフォルト設定として追加
+
+## [v0.1.0] - 2024-12-22
+
+### Added
+- 基本的なファイル収集機能
+  - 再帰的なディレクトリ走査
+  - ファイル内容の収集
+- 設定ファイル(.gather)サポート
+  - max_lines制限
+  - max_file_size制限
+  - バイナリファイルのスキップ
+  - 除外パターン([exclude])
+  - 内容スキップパターン([skip])
+  - 含める拡張子([include])
+- CLIオプション
+  - カスタム出力先(`--output`)
+  - タイムスタンプ付きファイル名(`--timestamp`)
+  - VS Codeで自動で開く(`--no-open`で無効化)
+- クロスプラットフォーム対応
+  - Windows, macOS, Linux用のバイナリ
+  - プラットフォーム固有のインストールスクリプト
+
+[v0.2.0]: https://github.com/herring101/gather_files/compare/v0.1.0...v0.2.0
+[v0.1.0]: https://github.com/herring101/gather_files/releases/tag/v0.1.0
+```
+
+### CONTRIBUTING.md
+```
+# Changelog
+
+## [v0.2.3] - 2025-03-04
+
+### Fixed
+- [include]セクションの問題修正
+  - ディレクトリツリー出力に対しても[include]パターンを適用
+  - 拡張子だけの指定（例：`.py`）を`**/*.py`に変換
+  - 単純なファイル名パターンの扱いを改善
+
+[v0.2.3]: https://github.com/herring101/gather_files/compare/v0.2.2...v0.2.3
+
+## [v0.2.2] - 2025-03-04
+
+### Changed
+- [include]セクションの機能強化
+  - 拡張子だけでなく、様々なグロブパターンをサポート
+  - 例
+    - `*.md`
+    - `src/**/*.rs`
+    - `*.{js,ts}`
+- .gatherテンプレートの改善
+  - より詳細な使用例とコメントを追加
+
+[v0.2.2]: https://github.com/herring101/gather_files/compare/v0.2.1...v0.2.2
+
+## [v0.2.1] - 2024-12-25
+
+### Changed
+- ファイル処理情報の改善
+  - 処理済み/スキップファイルの詳細なカウント表示
+  - 処理サマリーの追加（合計、スキップ理由等）
+- コードベースの改善
+  - scanner.rsの整理（モジュール分割）
+  - コード品質の向上
+
+[v0.2.1]: https://github.com/herring101/gather_files/compare/v0.2.0...v0.2.1
+
+## [v0.2.0] - 2024-12-23
+
+### Added
+- .gitignoreの内容を[exclude]セクションに統合する機能
+  - `--use-gitignore`フラグでCLIから制御可能
+  - .gatherファイルの`use_gitignore`設定で制御可能
+  - 重複パターンは自動的に除外
+
+### Changed
+- .gatherファイルのデフォルトテンプレートを更新
+  - `use_gitignore=yes`をデフォルト設定として追加
+
+## [v0.1.0] - 2024-12-22
+
+### Added
+- 基本的なファイル収集機能
+  - 再帰的なディレクトリ走査
+  - ファイル内容の収集
+- 設定ファイル(.gather)サポート
+  - max_lines制限
+  - max_file_size制限
+  - バイナリファイルのスキップ
+  - 除外パターン([exclude])
+  - 内容スキップパターン([skip])
+  - 含める拡張子([include])
+- CLIオプション
+  - カスタム出力先(`--output`)
+  - タイムスタンプ付きファイル名(`--timestamp`)
+  - VS Codeで自動で開く(`--no-open`で無効化)
+- クロスプラットフォーム対応
+  - Windows, macOS, Linux用のバイナリ
+  - プラットフォーム固有のインストールスクリプト
+
+[v0.2.0]: https://github.com/herring101/gather_files/compare/v0.1.0...v0.2.0
+[v0.1.0]: https://github.com/herring101/gather_files/releases/tag/v0.1.0
+```
+
+### README.md
+```
+# gather_files
+
+gather_files は、プロジェクトのソースコードを LLM（Large Language Model）に理解させやすい形式で収集するツールです。
+
+## 目的と特徴
+
+- **LLM との効率的な対話**
+
+  - プロジェクト全体を一度に LLM に理解させることができます
+  - 必要なファイルを適切な順序で収集し、フォーマットします
+  - 余分なファイルを自動的に除外し、トークン消費を最適化します
+
+- **賢い収集と除外**
+
+  - .gitignore との統合で、不要なファイルを自動除外
+  - カスタマイズ可能な除外パターン
+  - バイナリファイルの自動スキップ
+
+- **使いやすさを重視**
+  - シンプルなコマンドで即座に利用開始
+  - プロジェクトタイプに応じた設定テンプレート（近日実装予定）
+  - VS Code との統合
+
+## インストール
+
+### Cargo を使用したインストール
+
+```bash
+# GitHubから直接インストール
+cargo install --git https://github.com/herring101/gather_files
+
+# 特定のバージョンを指定してインストール
+cargo install --git https://github.com/herring101/gather_files --tag v0.2.0
+```
+
+### スクリプトを使用したインストール
+
+#### Windows
+
+```powershell
+# PowerShell を管理者権限で実行
+irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 | iex
+```
+
+#### macOS / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/herring101/gather_files/main/install.sh | sh
+```
+
+## 基本的な使い方
+
+### クイックスタート
+
+```bash
+# カレントディレクトリのコードを収集
+gather_files .
+
+# 特定のディレクトリのコードを収集
+gather_files /path/to/project
+```
+
+### コマンドラインオプション
+
+| オプション           | 短縮形 | 説明                                     | デフォルト値      |
+| -------------------- | ------ | ---------------------------------------- | ----------------- |
+| --output             | -o     | 出力ファイルのパス                       | gather/output.txt |
+| --config-file        | -c     | 設定ファイルのパス                       | .gather           |
+| --max-lines          | -m     | 各ファイルから読み込む最大行数           | 1000              |
+| --max-file-size      | なし   | スキップするファイルサイズ閾値（バイト） | なし              |
+| --patterns           | -p     | 追加の除外パターン（複数指定可）         | なし              |
+| --skip-patterns      | -s     | 追加の内容スキップパターン（複数指定可） | なし              |
+| --include-patterns   | -i     | 含めるファイルパターン（複数指定可）         | なし              |
+| --use-gitignore      | なし   | .gitignore の内容を[exclude]に統合       | false             |
+| --timestamp          | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
+| --no-open            | なし   | VS Code での自動オープンを無効化         | false             |
+
+### 使用例
+
+```bash
+# 出力先を指定して最大行数を制限
+gather_files . -o output.txt --max-lines 500
+
+# .gitignoreを使用し、特定のパターンのみを含める
+gather_files . --use-gitignore -i "*.rs" -i "*.toml"
+
+# カスタム除外パターンを追加
+gather_files . -p "*.tmp" -p "build/"
+```
+
+## 設定ファイル (.gather)
+
+プロジェクトルートに`.gather`ファイルを配置することで、収集の設定をカスタマイズできます：
+
+### 設定ファイルのオプション説明
+
+#### [settings]セクション
+
+| 設定キー      | 説明                                       | デフォルト値 |
+| ------------- | ------------------------------------------ | ------------ |
+| max_lines     | 各ファイルから読み込む最大行数             | 1000         |
+| max_file_size | スキップするファイルサイズ閾値（バイト）   | なし         |
+| skip_binary   | バイナリファイルをスキップするか           | false        |
+| output_dir    | 出力先ディレクトリ                         | gather       |
+| use_timestamp | 出力ファイル名にタイムスタンプを付与するか | false        |
+| use_gitignore | .gitignore の内容を[exclude]に統合するか   | false        |
+| open_output   | VSCode で出力ファイルを自動で開くか        | true         |
+
+#### [exclude]セクション
+
+除外するファイルやディレクトリのパターンを指定します。
+ディレクトリの場合は末尾に`/`を付けることで、そのディレクトリ以下をすべて除外します。
+
+```ini
+[exclude]
+.git/          # .gitディレクトリ以下をすべて除外
+node_modules/  # node_modulesディレクトリ以下をすべて除外
+*.log         # すべてのlogファイルを除外
+temp_*        # temp_で始まるすべてのファイルを除外
+```
+
+#### [skip]セクション
+
+内容の出力をスキップするファイルパターンを指定します。
+マッチしたファイルは`(略)`として出力されます。
+
+```ini
+[skip]
+*.pdf       # PDFファイルの内容をスキップ
+*.min.js    # 圧縮済みJavaScriptファイルをスキップ
+```
+
+#### [include]セクション
+
+含めるファイルパターンを指定します。
+指定がない場合は、すべてのファイルが対象となります。
+
+```ini
+[include]
+*.rs         # すべてのRustファイル
+src/**/*.py   # srcディレクトリ以下のすべてのPythonファイル
+*.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
+```
+
+### パターンの書き方
+
+ファイルパターンはグロブ形式で指定します：
+
+- `*` : 任意の文字列
+- `?` : 任意の 1 文字
+- `[abc]` : a, b, c のいずれかの 1 文字
+- `[!abc]` : a, b, c 以外の 1 文字
+
+例：
+
+- `*.txt` : すべての txt ファイル
+- `secret_*.log` : secret\_ で始まるすべての log ファイル
+- `logs/` : logs ディレクトリ以下をすべて
+- `src/**/*.rs` : src ディレクトリ以下のすべての Rust ファイル
+
+````
+
+## LLMとの使用例
+
+1. コードの収集
+```bash
+cd your-project
+gather .
+````
+
+2. 生成されたファイル（例：gather/output.txt）を LLM に送信
+
+3. プロジェクトの文脈を理解した LLM と対話
+   - バグ修正の提案
+   - リファクタリングの提案
+   - 新機能の実装方法の相談
+   - コードレビュー
+
+## 開発ロードマップ
+
+### 近日実装予定の機能
+
+- プロジェクトタイプの自動検出
+- 言語/フレームワーク別の最適化テンプレート
+- トークン数の最適化機能
+- 差分モード（git diff ベース）
+- プリセット管理システム
+
+### 長期的な目標
+
+- LLM プロバイダーとの直接統合
+- IDE/エディタプラグイン
+- 依存関係グラフの生成
+- インタラクティブモード
+- プロジェクト分析レポート
+
+## コントリビュート
+
+プルリクエストや課題の報告を歓迎します。以下の分野で特に協力を求めています：
+
+- 新しいプロジェクトテンプレートの追加
+- パフォーマンスの最適化
+- テストの追加
+- ドキュメントの改善
+
+## ライセンス
+
+MIT
+
+## 作者
+
+@herring101
+
+## 更新履歴
+
+詳細な更新履歴は[CHANGELOG.md](./CHANGELOG.md)を参照してください。
+```
+
+### src/args.rs
+```
+use crate::model::CLIOptions;
+use clap::{Arg, ArgAction, Command};
+use std::path::PathBuf;
+
+/// CLIオプションを clap でパース
+pub fn parse_args() -> CLIOptions {
+    let matches = Command::new("gather")
+        .version("0.1.0")
+        .author("Your Name")
+        .about("Collect files recursively and output them as text.")
+        .arg(
+            Arg::new("target_directory")
+                .help("解析したいディレクトリを指定")
+                .required(true)
+                .num_args(1)
+                .value_name("DIR")
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("output")
+                .long("output")
+                .short('o')
+                .help("出力ファイルのパス (デフォルト: gather/output.txt)")
+                .num_args(1)
+                .value_name("FILE")
+                .action(ArgAction::Set),
+        )
+        // --- ここから変更: timestamp をオンオフする引数 ---
+        .arg(
+            Arg::new("use_timestamp")
+                .long("timestamp")
+                .help("出力ファイル名にタイムスタンプを付与する (デフォルトは付与しない)")
+                .action(ArgAction::SetTrue),
+        )
+        // --- ここまで変更 ---
+        .arg(
+            Arg::new("config_file")
+                .long("config-file")
+                .short('c')
+                .help("設定ファイル (例: .gather)")
+                .num_args(1)
+                .value_name("FILE")
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("max_lines")
+                .long("max-lines")
+                .short('m')
+                .help("各ファイルから読み込む最大行数")
+                .num_args(1)
+                .value_name("N")
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("max_file_size")
+                .long("max-file-size")
+                .help("このサイズ(BYTE)を超えるファイルをスキップ")
+                .num_args(1)
+                .value_name("BYTES")
+                .action(ArgAction::Set),
+        )
+        .arg(
+            Arg::new("patterns")
+                .long("patterns")
+                .short('p')
+                .help("追加の除外パターン (1パターンずつ複数回指定可)")
+                .action(ArgAction::Append)
+                .value_name("PATTERN"),
+        )
+        .arg(
+            Arg::new("skip_patterns")
+                .long("skip-patterns")
+                .short('s')
+                .help("追加の内容スキップパターン (1パターンずつ複数回指定可)")
+                .action(ArgAction::Append)
+                .value_name("PATTERN"),
+        )
+        .arg(
+            Arg::new("include_patterns")
+                .long("include-patterns")
+                .short('i')
+                .help("含めたいファイルパターン (1つずつ複数回指定可)")
+                .action(ArgAction::Append)
+                .value_name("PATTERN"),
+        )
+        // --- ここから変更: .gatherを自動で開かないオプション ---
+        .arg(
+            Arg::new("no_open")
+                .long("no-open")
+                .help(".gather を自動で code で開くのを抑制")
+                .action(ArgAction::SetTrue),
+        )
+        // --- ここまで変更 ---
+        .arg(
+            Arg::new("use_gitignore")
+                .long("use-gitignore")
+                .help(".gitignoreの内容を[exclude]に追加")
+                .action(ArgAction::SetTrue),
+        )
+        .get_matches();
+
+    let target_dir_path = PathBuf::from(
+        matches
+            .get_one::<String>("target_directory")
+            .expect("required"),
+    );
+
+    let output_file = matches.get_one::<String>("output").map(PathBuf::from);
+    let config_file = matches.get_one::<String>("config_file").map(PathBuf::from);
+
+    let max_lines = matches
+        .get_one::<String>("max_lines")
+        .and_then(|s| s.parse::<usize>().ok());
+
+    let max_file_size = matches
+        .get_one::<String>("max_file_size")
+        .and_then(|s| s.parse::<u64>().ok());
+
+    let extra_exclude_patterns = matches
+        .get_many::<String>("patterns")
+        .map(|vals| vals.map(|v| v.to_string()).collect())
+        .unwrap_or_default();
+
+    let extra_skip_patterns = matches
+        .get_many::<String>("skip_patterns")
+        .map(|vals| vals.map(|v| v.to_string()).collect())
+        .unwrap_or_default();
+
+    let include_patterns = matches
+        .get_many::<String>("include_patterns")
+        .map(|vals| vals.map(|v| v.to_string()).collect())
+        .unwrap_or_default();
+
+    // --- ここから変更 ---
+    let use_timestamp = matches.get_flag("use_timestamp");
+    let no_open = matches.get_flag("no_open");
+    let use_gitignore = matches.get_flag("use_gitignore");
+    // --- ここまで変更 ---
+
+    CLIOptions {
+        target_dir: target_dir_path,
+        output_file,
+        config_file,
+        max_lines,
+        max_file_size,
+        extra_exclude_patterns,
+        extra_skip_patterns,
+        include_patterns,
+        use_timestamp, // 追加
+        no_open,       // 追加
+        use_gitignore, // 追加
+    }
+}
+```
+
+### src/config.rs
+```
+use std::fs;
+use std::path::Path;
+
+use crate::model::ConfigParams;
+
+/// 独自フォーマットの .gather を読む
+///
+/// 例:
+/// [settings]
+/// max_lines=1000
+/// max_file_size=1000000
+/// skip_binary=yes
+/// output_dir=out
+/// use_timestamp=no
+/// open_output=yes
+/// use_gitignore=yes
+///
+/// [exclude]
+/// .git
+/// target/
+/// *.md
+///
+/// [skip]
+/// *.pdf
+///
+/// [include]
+/// .rs
+/// .py
+///
+pub fn load_config_file(path: &Path) -> ConfigParams {
+    let mut params = ConfigParams::default();
+    if !path.exists() {
+        return params; // 存在しなければデフォルト
+    }
+
+    let content = match fs::read_to_string(path) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!(
+                "Warning: Could not read config file: {} - {}",
+                path.display(),
+                e
+            );
+            return params;
+        }
+    };
+
+    let mut current_section = String::new();
+
+    for line in content.lines() {
+        let line = line.trim();
+        // 空行やコメント(# など)はスキップ
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        // セクション行 ([settings], [exclude], etc.)
+        if line.starts_with('[') && line.ends_with(']') {
+            current_section = line[1..line.len() - 1].to_lowercase();
+            continue;
+        }
+
+        match current_section.as_str() {
+            "settings" => {
+                // settings セクションは key=value の形を想定
+                if let Some((k, v)) = parse_key_value(line) {
+                    let k_lower = k.to_lowercase();
+                    match k_lower.as_str() {
+                        "max_lines" => {
+                            if let Ok(n) = v.parse::<usize>() {
+                                params.max_lines = n;
+                            }
+                        }
+                        "max_file_size" => {
+                            if let Ok(n) = v.parse::<u64>() {
+                                params.max_file_size = Some(n);
+                            }
+                        }
+                        "skip_binary" => {
+                            let v_lower = v.to_lowercase();
+                            params.skip_binary = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "output_dir" => {
+                            if !v.is_empty() {
+                                params.output_dir = Some(v);
+                            }
+                        }
+                        "use_timestamp" => {
+                            let v_lower = v.to_lowercase();
+                            params.use_timestamp = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "open_output" => {
+                            let v_lower = v.to_lowercase();
+                            params.open_output = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "use_gitignore" => {
+                            let v_lower = v.to_lowercase();
+                            params.use_gitignore = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        _ => {
+                            eprintln!("Unknown setting key: {}", k);
+                        }
+                    }
+                }
+            }
+            "exclude" => {
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.exclude_patterns.push(pattern);
+                }
+            }
+            "skip" => {
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.skip_content_patterns.push(pattern);
+                }
+            }
+            "include" => {
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.include_patterns.push(pattern);
+                }
+            }
+            _ => {
+                // それ以外のセクションや行は無視
+            }
+        }
+    }
+
+    params
+}
+
+/// "key=value" をパースして (key, value) を返す
+/// 例: "max_lines=1000" -> Some(("max_lines", "1000"))
+fn parse_key_value(line: &str) -> Option<(String, String)> {
+    let mut split_iter = line.splitn(2, '=');
+    let key = split_iter.next()?.trim();
+    let val = split_iter.next()?.trim();
+    if key.is_empty() {
+        return None;
+    }
+    Some((key.to_string(), val.to_string()))
+}
+```
+
+### src/gitignore.rs
+```
+// src/gitignore.rs
+
+use std::fs;
+use std::io::{self, BufRead};
+use std::path::Path;
+
+/// .gitignoreファイルを解析して除外パターンのリストを返す
+pub fn parse_gitignore(path: &Path) -> io::Result<Vec<String>> {
+    let file = fs::File::open(path)?;
+    let reader = io::BufReader::new(file);
+    let mut patterns = Vec::new();
+
+    for line in reader.lines() {
+        let line = line?;
+        let trimmed = line.trim();
+
+        // 空行やコメントをスキップ
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        // パターンを標準化
+        let pattern = normalize_pattern(trimmed);
+        patterns.push(pattern);
+    }
+
+    Ok(patterns)
+}
+
+/// gitignoreパターンを[exclude]セクション用に標準化
+fn normalize_pattern(pattern: &str) -> String {
+    let mut normalized = pattern.to_string();
+
+    // 先頭の'/'を除去（相対パスに変換）
+    if normalized.starts_with('/') {
+        normalized = normalized[1..].to_string();
+    }
+
+    // 末尾の'/'はそのまま（ディレクトリ判定に使用）
+    // '**'パターンもそのまま（globsetが対応）
+
+    // '!'（否定）で始まるパターンは現時点ではサポートしない
+    if normalized.starts_with('!') {
+        return String::new();
+    }
+
+    normalized
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_normalize_pattern() {
+        assert_eq!(normalize_pattern("/node_modules"), "node_modules");
+        assert_eq!(normalize_pattern("*.log"), "*.log");
+        assert_eq!(normalize_pattern("dist/"), "dist/");
+        assert_eq!(normalize_pattern("**/*.tmp"), "**/*.tmp");
+        assert_eq!(normalize_pattern("!temp"), ""); // 否定パターンは空文字列に
+    }
+
+    #[test]
+    fn test_parse_gitignore() -> io::Result<()> {
+        let dir = tempdir()?;
+        let file_path = dir.path().join(".gitignore");
+        let mut file = File::create(&file_path)?;
+
+        writeln!(file, "# Node.js")?;
+        writeln!(file, "/node_modules")?;
+        writeln!(file, "*.log")?;
+        writeln!(file, "")?;
+        writeln!(file, "dist/")?;
+        writeln!(file, "# 否定パターン")?;
+        writeln!(file, "!keep.log")?;
+
+        let patterns = parse_gitignore(&file_path)?;
+
+        // パターンを表示して確認
+        println!("Detected patterns: {:?}", patterns);
+
+        // 期待されるパターン
+        let expected: Vec<String> = vec![
+            "node_modules".to_string(),
+            "*.log".to_string(),
+            "dist/".to_string(),
+        ];
+
+        // 空でないパターンのみをフィルタリング
+        let filtered_patterns: Vec<String> =
+            patterns.into_iter().filter(|p| !p.is_empty()).collect();
+
+        assert_eq!(filtered_patterns, expected);
+
+        Ok(())
+    }
+}
+```
+
+### src/main.rs
+```
+mod args;
+mod config;
+mod gitignore;
+mod model;
+mod scanner;
+
+use crate::args::parse_args;
+use crate::config::load_config_file;
+use crate::gitignore::parse_gitignore;
+use crate::scanner::run;
+
+use chrono::Local;
+use std::fs;
+use std::path::PathBuf;
+use std::process::{self, Command};
+
+fn main() {
+    // 1) CLIオプション取得
+    let cli_opts = parse_args();
+
+    // 2) ターゲットディレクトリ存在チェック
+    if !cli_opts.target_dir.is_dir() {
+        eprintln!(
+            "ディレクトリが存在しません: {}",
+            cli_opts.target_dir.display()
+        );
+        process::exit(1);
+    }
+
+    // 3) .gather パスを決定
+    let gather_path = cli_opts
+        .config_file
+        .clone()
+        .unwrap_or_else(|| cli_opts.target_dir.join(".gather"));
+
+    // 4) .gather が無ければ自動生成
+    if !gather_path.exists() {
+        let sample = r#"[settings]
+max_lines=1000
+max_file_size=500000
+skip_binary=yes
+output_dir=gather
+use_timestamp=no
+open_output=yes
+use_gitignore=yes
+
+[exclude]
+.git
+gather
+.gather
+
+[skip]
+*.pdf
+
+[include]
+# (パターン未指定の場合、すべて含む想定)
+# 例：
+# *.md         # すべてのMarkdownファイル
+# src/**/*.rs  # srcディレクトリ以下のRustファイル
+# *.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
+"#;
+        match fs::write(&gather_path, sample) {
+            Ok(_) => {
+                eprintln!(".gatherファイルを生成しました: {}", gather_path.display());
+            }
+            Err(e) => {
+                eprintln!("作成に失敗しました: {}", e);
+                process::exit(1);
+            }
+        }
+    }
+
+    // 5) .gather 読み込み
+    let mut config_params = load_config_file(&gather_path);
+
+    // 6) CLIオプションを上書き & 結合
+    if let Some(m) = cli_opts.max_lines {
+        config_params.max_lines = m;
+    }
+    if let Some(mf) = cli_opts.max_file_size {
+        config_params.max_file_size = Some(mf);
+    }
+    if !cli_opts.extra_exclude_patterns.is_empty() {
+        config_params
+            .exclude_patterns
+            .extend(cli_opts.extra_exclude_patterns);
+    }
+    if !cli_opts.extra_skip_patterns.is_empty() {
+        config_params
+            .skip_content_patterns
+            .extend(cli_opts.extra_skip_patterns);
+    }
+    if !cli_opts.include_patterns.is_empty() {
+        config_params
+            .include_patterns
+            .extend(cli_opts.include_patterns);
+    }
+    if cli_opts.use_timestamp {
+        config_params.use_timestamp = true;
+    }
+    if cli_opts.no_open {
+        config_params.open_output = false;
+    }
+    if cli_opts.use_gitignore {
+        config_params.use_gitignore = true;
+    }
+
+    // 7) .gitignoreの統合
+    if config_params.use_gitignore {
+        let gitignore_path = cli_opts.target_dir.join(".gitignore");
+        if gitignore_path.exists() {
+            match parse_gitignore(&gitignore_path) {
+                Ok(patterns) => {
+                    // 空でないパターンのみを追加
+                    let valid_patterns: Vec<String> =
+                        patterns.into_iter().filter(|p| !p.is_empty()).collect();
+
+                    if !valid_patterns.is_empty() {
+                        eprintln!(
+                            "Info: .gitignoreから{}個のパターンを追加します",
+                            valid_patterns.len()
+                        );
+
+                        // 重複を避けるために既存のパターンと比較
+                        for pattern in valid_patterns {
+                            if !config_params.exclude_patterns.contains(&pattern) {
+                                config_params.exclude_patterns.push(pattern);
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Warning: .gitignoreの読み込みに失敗: {}", e);
+                }
+            }
+        } else {
+            eprintln!("Info: .gitignoreファイルが見つかりません");
+        }
+    }
+
+    // 8) 出力ファイルのパス決定
+    let output_path: PathBuf = if let Some(ref out) = cli_opts.output_file {
+        out.clone()
+    } else {
+        // デフォルトは gather/output.txt
+        let default_dir = cli_opts.target_dir.join("gather");
+        if !default_dir.is_dir() {
+            if let Err(e) = fs::create_dir_all(&default_dir) {
+                eprintln!("outputディレクトリの作成に失敗: {}", e);
+                process::exit(1);
+            }
+        }
+        let file_name = if config_params.use_timestamp {
+            let ts = Local::now().format("%Y%m%d%H%M%S").to_string();
+            format!("output_{}.txt", ts)
+        } else {
+            "output.txt".to_string()
+        };
+        default_dir.join(file_name)
+    };
+
+    // 9) スキャナ実行
+    if let Err(e) = run(&cli_opts.target_dir, &output_path, &config_params, &[]) {
+        eprintln!("エラー: {}", e);
+        process::exit(1);
+    }
+
+    eprintln!("Done! Output => {}", output_path.display());
+
+    // 10) 出力ファイルを開く
+    if config_params.open_output {
+        match Command::new("code").arg(&output_path).status() {
+            Ok(_) => (),
+            Err(e) => eprintln!("Warning: VS Code で出力ファイルを開けませんでした: {}", e),
+        }
+    }
+}
+```
+
+### src/model.rs
+```
+use std::path::PathBuf;
+
+/// CLI で受け取るパラメータ
+#[derive(Debug)]
+pub struct CLIOptions {
+    pub target_dir: PathBuf,
+    pub output_file: Option<PathBuf>,
+    pub config_file: Option<PathBuf>,
+    pub max_lines: Option<usize>,
+    pub max_file_size: Option<u64>,
+    pub extra_exclude_patterns: Vec<String>,
+    pub extra_skip_patterns: Vec<String>,
+    pub include_patterns: Vec<String>, // includeパターン（グロブ形式）
+    pub use_timestamp: bool,           // --timestamp
+    pub no_open: bool,                 // --no-open
+    pub use_gitignore: bool,           // --use-gitignore
+}
+
+/// 設定ファイル(.gather) + CLIを合体して最終的に使うパラメータ
+#[derive(Debug)]
+pub struct ConfigParams {
+    pub max_lines: usize,
+    pub max_file_size: Option<u64>,
+    pub skip_binary: bool,
+    pub output_dir: Option<String>,
+    pub exclude_patterns: Vec<String>,
+    pub skip_content_patterns: Vec<String>,
+    pub include_patterns: Vec<String>, // includeパターン（グロブ形式）
+    pub use_timestamp: bool,           // 追加: タイムスタンプ付きの出力ファイル名を使用
+    pub open_output: bool,             // 追加: 出力ファイルをVSCodeで開く
+    pub use_gitignore: bool,           // 追加: .gitignore を使用
+}
+
+impl Default for ConfigParams {
+    fn default() -> Self {
+        Self {
+            max_lines: 1000,
+            max_file_size: None,
+            skip_binary: false,
+            output_dir: None,
+            exclude_patterns: vec![],
+            skip_content_patterns: vec![],
+            include_patterns: vec![],
+            use_timestamp: false, // デフォルト: false
+            open_output: true,    // デフォルト: true
+            use_gitignore: false, // デフォルト: false
+        }
+    }
+}
+```
+
+### src/scanner/counter.rs
+```
+// src/scanner/counter.rs
+
+#[derive(Debug, Default)]
+pub struct ProcessCounter {
+    total_files: usize,
+    processed_files: usize,
+    skipped_by_pattern: usize,
+    skipped_binary: usize,
+    skipped_size: usize,
+    skipped_extension: usize,
+}
+
+impl ProcessCounter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn set_total_files(&mut self, count: usize) {
+        self.total_files = count;
+    }
+
+    pub fn increment_processed(&mut self) {
+        self.processed_files += 1;
+    }
+
+    pub fn increment_skipped_pattern(&mut self) {
+        self.skipped_by_pattern += 1;
+    }
+
+    pub fn increment_skipped_binary(&mut self) {
+        self.skipped_binary += 1;
+    }
+
+    pub fn increment_skipped_size(&mut self) {
+        self.skipped_size += 1;
+    }
+
+    pub fn increment_skipped_extension(&mut self) {
+        self.skipped_extension += 1;
+    }
+
+    pub fn print_summary(&self) {
+        let total_skipped = self.skipped_by_pattern
+            + self.skipped_binary
+            + self.skipped_size
+            + self.skipped_extension;
+
+        eprintln!("\nProcessing summary:");
+        eprintln!(
+            "- Files processed: {}/{}",
+            self.processed_files, self.total_files
+        );
+
+        if total_skipped > 0 {
+            eprintln!("- Skipped files: {}", total_skipped);
+            if self.skipped_by_pattern > 0 {
+                eprintln!(
+                    "  - Excluded by patterns: {} files",
+                    self.skipped_by_pattern
+                );
+            }
+            if self.skipped_binary > 0 {
+                eprintln!("  - Binary files: {} files", self.skipped_binary);
+            }
+            if self.skipped_size > 0 {
+                eprintln!("  - Size limit exceeded: {} files", self.skipped_size);
+            }
+            if self.skipped_extension > 0 {
+                eprintln!(
+                    "  - Not matching patterns: {} files",
+                    self.skipped_extension
+                );
+            }
+        }
+    }
+}
+```
+
+### src/scanner/mod.rs
+```
+// src/scanner/mod.rs
+
+mod counter;
+mod sort;
+mod utils;
+mod walker;
+
+use counter::ProcessCounter;
+use std::fs::{self, File};
+use std::io::{BufRead, BufReader, Write};
+use std::path::Path;
+
+use crate::model::ConfigParams;
+use sort::compare_dir_entry;
+use utils::{build_globset, is_binary_file};
+use walker::collect_entries;
+
+/// メインの走査関数
+pub fn run(
+    target_dir: &Path,
+    output_file: &Path,
+    config: &ConfigParams,
+    _cli_include_patterns: &[String],
+) -> Result<(), String> {
+    let mut counter = ProcessCounter::new();
+
+    // 出力ファイルを開く
+    let mut outfile = File::create(output_file).map_err(|e| {
+        format!(
+            "出力ファイルを作成できません: {} - {}",
+            output_file.display(),
+            e
+        )
+    })?;
+
+    // globsetの構築
+    let exclude_globset = build_globset(&config.exclude_patterns);
+    let skip_globset = build_globset(&config.skip_content_patterns);
+
+    // include patterns
+    // 空の場合はNoneを返すので、空の場合は全ファイルを含める
+    let include_globset = if config.include_patterns.is_empty() {
+        None
+    } else {
+        build_globset(&config.include_patterns)
+    };
+
+    // ディレクトリツリーの出力
+    let mut entries = collect_entries(target_dir, &exclude_globset, false);
+    entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
+
+    writeln!(outfile, "```").ok();
+    for entry in entries {
+        let path = entry.path();
+        let rel = match path.strip_prefix(target_dir) {
+            Ok(r) => r,
+            Err(_) => path,
+        };
+        let rel_str = rel.to_string_lossy().to_string();
+
+        // exclude
+        if let Some(gs) = &exclude_globset {
+            if gs.is_match(Path::new(&*rel_str)) {
+                continue;
+            }
+        }
+
+        // include patterns - ディレクトリツリーにも適用
+        if let Some(gs) = &include_globset {
+            // ディレクトリの場合は、その配下に含まれるファイルが[include]パターンに
+            // マッチするかどうかを確認する必要がある
+            if path.is_dir() {
+                // ディレクトリそのもののパスがマッチするかチェック
+                let dir_matches = gs.is_match(Path::new(&*rel_str));
+                
+                // ディレクトリ配下のファイルがマッチするかチェック
+                // 例: dir/が含まれていなくても、dir/file.pyがマッチする場合はdirを表示
+                let dir_with_wildcard = if rel_str.ends_with('/') {
+                    format!("{}**", rel_str)
+                } else {
+                    format!("{}//**", rel_str)
+                };
+                
+                let children_match = gs.is_match(Path::new(&dir_with_wildcard));
+                
+                if !dir_matches && !children_match {
+                    continue;
+                }
+            } else if !gs.is_match(Path::new(&*rel_str)) {
+                // ファイルの場合は単純にパターンマッチ
+                continue;
+            }
+        }
+
+        if path.is_dir() {
+            let level = rel.components().count();
+            let indent = "    ".repeat(level.saturating_sub(1));
+            let name = path
+                .file_name()
+                .map(|s| s.to_string_lossy())
+                .unwrap_or_default();
+            writeln!(outfile, "{}{}/", indent, name).ok();
+        } else {
+            let level = rel.components().count();
+            let indent = "    ".repeat(level.saturating_sub(1));
+            let name = path
+                .file_name()
+                .map(|s| s.to_string_lossy())
+                .unwrap_or_default();
+            writeln!(outfile, "{}{}", indent, name).ok();
+        }
+    }
+    writeln!(outfile, "```").ok();
+    writeln!(outfile).ok();
+
+    // ファイル内容の出力
+    let mut file_entries = collect_entries(target_dir, &exclude_globset, true);
+
+    file_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
+
+    let total_files = file_entries.len();
+    counter.set_total_files(total_files);
+
+    for (idx, entry) in file_entries.iter().enumerate() {
+        let path = entry.path();
+        let rel = match path.strip_prefix(target_dir) {
+            Ok(r) => r,
+            Err(_) => path,
+        };
+        let rel_str = rel.to_string_lossy();
+
+        // exclude
+        if let Some(gs) = &exclude_globset {
+            if gs.is_match(Path::new(&*rel_str)) {
+                counter.increment_skipped_pattern();
+                continue;
+            }
+        }
+
+        // include patterns
+        if let Some(gs) = &include_globset {
+            if !gs.is_match(Path::new(&*rel_str)) {
+                counter.increment_skipped_extension();
+                continue;
+            }
+        }
+
+        eprintln!(
+            "({}/{}) Processing: {}",
+            idx + 1,
+            total_files,
+            path.display()
+        );
+
+        // skip pattern
+        if let Some(gs) = &skip_globset {
+            if gs.is_match(Path::new(&*rel_str)) {
+                writeln!(outfile, "### {}", rel_str).ok();
+                writeln!(outfile, "```").ok();
+                writeln!(outfile, "(略)").ok();
+                writeln!(outfile, "```").ok();
+                writeln!(outfile).ok();
+                counter.increment_processed();
+                continue;
+            }
+        }
+
+        // バイナリチェック
+        if config.skip_binary && is_binary_file(path) {
+            writeln!(outfile, "### {}", rel_str).ok();
+            writeln!(outfile, "```").ok();
+            writeln!(outfile, "(略) バイナリファイル").ok();
+            writeln!(outfile, "```").ok();
+            writeln!(outfile).ok();
+            counter.increment_skipped_binary();
+            continue;
+        }
+
+        // サイズ制限
+        if let Some(max_size) = config.max_file_size {
+            if let Ok(meta) = fs::metadata(path) {
+                if meta.len() > max_size {
+                    writeln!(outfile, "### {}", rel_str).ok();
+                    writeln!(outfile, "```").ok();
+                    writeln!(outfile, "(略)").ok();
+                    writeln!(outfile, "```").ok();
+                    writeln!(outfile).ok();
+                    counter.increment_skipped_size();
+                    continue;
+                }
+            }
+        }
+
+        // ファイル内容を出力
+        writeln!(outfile, "### {}", rel_str).ok();
+        writeln!(outfile, "```").ok();
+
+        let file = match File::open(path) {
+            Ok(f) => f,
+            Err(e) => {
+                writeln!(outfile, "Error: {}", e).ok();
+                writeln!(outfile).ok();
+                counter.increment_processed();
+                continue;
+            }
+        };
+        let reader = BufReader::new(file);
+
+        let mut line_count = 0;
+        for line_result in reader.lines() {
+            match line_result {
+                Ok(line) => {
+                    if line_count >= config.max_lines {
+                        writeln!(outfile, "...").ok();
+                        writeln!(outfile, "(省略)").ok();
+                        break;
+                    }
+                    writeln!(outfile, "{}", line).ok();
+                    line_count += 1;
+                }
+                Err(e) => {
+                    writeln!(outfile, "Error reading line: {}", e).ok();
+                    break;
+                }
+            }
+        }
+
+        writeln!(outfile, "```").ok();
+        writeln!(outfile).ok();
+        counter.increment_processed();
+    }
+
+    // 処理サマリーの表示
+    counter.print_summary();
+
+    Ok(())
+}
+```
+
+### src/scanner/sort.rs
+```
+// src/scanner/sort.rs
+
+use std::path::Path;
+use walkdir::DirEntry;
+
+/// ディレクトリは末尾に "/" を付与した文字列を返す
+pub fn path_string_for_sort(entry: &DirEntry, target_dir: &Path) -> String {
+    let rel_path = entry
+        .path()
+        .strip_prefix(target_dir)
+        .unwrap_or(entry.path());
+    let mut s = rel_path.to_string_lossy().to_string();
+    if entry.file_type().is_dir() && !s.ends_with('/') {
+        s.push('/');
+    }
+    s
+}
+
+/// ナチュラルソート用のトークン
+#[derive(Debug)]
+struct Token {
+    value: String,
+    is_number: bool,
+}
+
+/// "doc10.md" -> [("doc", false), ("10", true), (".md", false)]
+fn tokenize_for_natural_sort(s: &str) -> Vec<Token> {
+    let mut tokens = Vec::new();
+    let mut current_str = String::new();
+    let mut current_is_digit = None;
+
+    for c in s.chars() {
+        let c_is_digit = c.is_ascii_digit();
+        match current_is_digit {
+            Some(isdigit) if isdigit == c_is_digit => {
+                current_str.push(c);
+            }
+            Some(_) => {
+                tokens.push(Token {
+                    value: current_str,
+                    is_number: current_is_digit.unwrap(),
+                });
+                current_str = String::new();
+                current_str.push(c);
+                current_is_digit = Some(c_is_digit);
+            }
+            None => {
+                current_str.push(c);
+                current_is_digit = Some(c_is_digit);
+            }
+        }
+    }
+    if !current_str.is_empty() {
+        tokens.push(Token {
+            value: current_str,
+            is_number: current_is_digit.unwrap_or(false),
+        });
+    }
+    tokens
+}
+
+/// 自然順序での文字列比較
+fn natural_compare(a: &str, b: &str) -> std::cmp::Ordering {
+    let ta = tokenize_for_natural_sort(a);
+    let tb = tokenize_for_natural_sort(b);
+
+    let mut i = 0;
+    while i < ta.len() && i < tb.len() {
+        let (tok_a, tok_b) = (&ta[i], &tb[i]);
+        match (tok_a.is_number, tok_b.is_number) {
+            (true, true) => {
+                let na = tok_a.value.parse::<u64>().unwrap_or(0);
+                let nb = tok_b.value.parse::<u64>().unwrap_or(0);
+                if na != nb {
+                    return na.cmp(&nb);
+                }
+            }
+            (false, false) => {
+                let ord = tok_a.value.cmp(&tok_b.value);
+                if ord != std::cmp::Ordering::Equal {
+                    return ord;
+                }
+            }
+            (true, false) => return std::cmp::Ordering::Less,
+            (false, true) => return std::cmp::Ordering::Greater,
+        }
+        i += 1;
+    }
+
+    ta.len().cmp(&tb.len())
+}
+
+pub fn compare_dir_entry(a: &DirEntry, b: &DirEntry, target_dir: &Path) -> std::cmp::Ordering {
+    let sa = path_string_for_sort(a, target_dir);
+    let sb = path_string_for_sort(b, target_dir);
+    natural_compare(&sa, &sb)
+}
+```
+
+### src/scanner/utils.rs
+```
+// src/scanner/utils.rs
+
+use globset::{Glob, GlobSet, GlobSetBuilder};
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+
+/// 簡易バイナリ判定
+pub fn is_binary_file(path: &Path) -> bool {
+    if let Ok(mut f) = File::open(path) {
+        let mut buffer = [0; 1024];
+        if let Ok(n) = f.read(&mut buffer) {
+            let non_text_count = buffer[..n]
+                .iter()
+                .filter(|&&b| b == 0 || (b < 7 || b == 127))
+                .count();
+            // 1/8 以上が非テキストならバイナリ判定
+            return non_text_count > (n / 8);
+        }
+    }
+    false
+}
+
+/// GlobSetを構築
+pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
+    if patterns.is_empty() {
+        return None;
+    }
+    let mut builder = GlobSetBuilder::new();
+    for pat in patterns {
+        // パターンの標準化
+        let expanded = if pat.ends_with('/') {
+            format!("{}**", pat) // ディレクトリパターンの場合
+        } else if pat.starts_with('.') && pat.len() > 1 && pat.chars().skip(1).all(|c| !c.is_whitespace() && c != '/') {
+            // 拡張子のみの指定の場合（例: .py）
+            format!("**/*{}", pat)
+        } else if !pat.contains('/') && !pat.contains('*') {
+            // ファイル名のみの場合
+            format!("**/{}", pat)
+        } else {
+            // その他のパターン（すでに**やワイルドカードが含まれている場合はそのまま）
+            pat.clone()
+        };
+        
+        eprintln!("Processing pattern: '{}' -> '{}'", pat, expanded);
+        
+        match Glob::new(&expanded) {
+            Ok(g) => {
+                builder.add(g);
+            }
+            Err(e) => {
+                eprintln!("Warning: invalid glob pattern '{}': {}", pat, e);
+            }
+        }
+    }
+    match builder.build() {
+        Ok(gs) => Some(gs),
+        Err(e) => {
+            eprintln!("Error building globset: {}", e);
+            None
+        }
+    }
+}
+```
+
+### src/scanner/walker.rs
+```
+// src/scanner/walker.rs
+
+use globset::GlobSet;
+use std::path::Path;
+use walkdir::{DirEntry, WalkDir};
+
+pub fn should_skip_dir(
+    entry: &DirEntry,
+    target_dir: &Path,
+    exclude_globset: &Option<GlobSet>,
+) -> bool {
+    if let Some(gs) = exclude_globset {
+        let rel = match entry.path().strip_prefix(target_dir) {
+            Ok(r) => r,
+            Err(_) => entry.path(),
+        };
+        let rel_str = rel.to_string_lossy();
+        gs.is_match(Path::new(&*rel_str))
+    } else {
+        false
+    }
+}
+
+pub fn collect_entries(
+    target_dir: &Path,
+    exclude_globset: &Option<GlobSet>,
+    only_files: bool,
+) -> Vec<DirEntry> {
+    let walker = WalkDir::new(target_dir).into_iter().filter_entry(|entry| {
+        if entry.file_type().is_dir() {
+            !should_skip_dir(entry, target_dir, exclude_globset)
+        } else {
+            true
+        }
+    });
+
+    if only_files {
+        walker
+            .flatten()
+            .filter(|entry| entry.file_type().is_file())
+            .collect()
+    } else {
+        walker.flatten().collect()
+    }
+}
+```
+
