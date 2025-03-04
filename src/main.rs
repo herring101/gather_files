@@ -53,8 +53,11 @@ gather
 *.pdf
 
 [include]
-# (拡張子未指定の場合、すべて含む想定)
-# .py
+# (パターン未指定の場合、すべて含む想定)
+# 例：
+# *.md         # すべてのMarkdownファイル
+# src/**/*.rs  # srcディレクトリ以下のRustファイル
+# *.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
 "#;
         match fs::write(&gather_path, sample) {
             Ok(_) => {
@@ -87,8 +90,10 @@ gather
             .skip_content_patterns
             .extend(cli_opts.extra_skip_patterns);
     }
-    if !cli_opts.include_exts.is_empty() {
-        config_params.include_exts.extend(cli_opts.include_exts);
+    if !cli_opts.include_patterns.is_empty() {
+        config_params
+            .include_patterns
+            .extend(cli_opts.include_patterns);
     }
     if cli_opts.use_timestamp {
         config_params.use_timestamp = true;

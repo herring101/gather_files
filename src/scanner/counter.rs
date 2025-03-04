@@ -67,7 +67,7 @@ impl ProcessCounter {
             }
             if self.skipped_extension > 0 {
                 eprintln!(
-                    "  - Not matching extensions: {} files",
+                    "  - Not matching patterns: {} files",
                     self.skipped_extension
                 );
             }

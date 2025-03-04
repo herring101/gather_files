@@ -103,13 +103,25 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                 }
             }
             "exclude" => {
-                params.exclude_patterns.push(line.to_string());
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.exclude_patterns.push(pattern);
+                }
             }
             "skip" => {
-                params.skip_content_patterns.push(line.to_string());
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.skip_content_patterns.push(pattern);
+                }
             }
             "include" => {
-                params.include_exts.push(line.to_string());
+                // 行内のコメントを除去
+                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
+                if !pattern.is_empty() {
+                    params.include_patterns.push(pattern);
+                }
             }
             _ => {
                 // それ以外のセクションや行は無視
