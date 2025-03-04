@@ -5,7 +5,7 @@ use std::path::PathBuf;
 /// CLIオプションを clap でパース
 pub fn parse_args() -> CLIOptions {
     let matches = Command::new("gather_files")
-        .version("0.2.3")
+    .version("0.2.4")
         .author("herring101")
         .about("Collect files recursively and output them as text for LLM processing.")
         .arg(
