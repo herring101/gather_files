@@ -1,73 +1,80 @@
-# Changelog
+# Contributing to gather_files
 
-## [v0.2.3] - 2025-03-04
+## ブランチ戦略
 
-### Fixed
-- [include]セクションの問題修正
-  - ディレクトリツリー出力に対しても[include]パターンを適用
-  - 拡張子だけの指定（例：`.py`）を`**/*.py`に変換
-  - 単純なファイル名パターンの扱いを改善
+このプロジェクトでは以下のブランチ構成を採用しています：
 
-[v0.2.3]: https://github.com/herring101/gather_files/compare/v0.2.2...v0.2.3
+- `main`: 安定版のコード（リリース用）
+- `develop`: 開発版のコード（次期リリースの準備用）
+- `feature/*`: 新機能開発用
+- `fix/*`: バグ修正用
 
-## [v0.2.2] - 2025-03-04
+## 開発の流れ
 
-### Changed
-- [include]セクションの機能強化
-  - 拡張子だけでなく、様々なグロブパターンをサポート
-  - 例
-    - `*.md`
-    - `src/**/*.rs`
-    - `*.{js,ts}`
-- .gatherテンプレートの改善
-  - より詳細な使用例とコメントを追加
+1. Issueの作成
+   - バグ報告や機能要望は、まずIssueを作成してください
+   - 既存のIssueがないか確認してください
 
-[v0.2.2]: https://github.com/herring101/gather_files/compare/v0.2.1...v0.2.2
+2. ブランチの作成
+   - 新機能開発: `feature/機能名`
+   - バグ修正: `fix/バグ内容`
+   - developブランチから分岐してください
 
-## [v0.2.1] - 2024-12-25
+3. 開発とコミット
+   - コミットメッセージは具体的に
+   - テストを追加してください
+   - `cargo fmt`と`cargo clippy`を実行してください
 
-### Changed
-- ファイル処理情報の改善
-  - 処理済み/スキップファイルの詳細なカウント表示
-  - 処理サマリーの追加（合計、スキップ理由等）
-- コードベースの改善
-  - scanner.rsの整理（モジュール分割）
-  - コード品質の向上
+4. プルリクエスト
+   - developブランチに向けてPRを作成
+   - PRの説明には関連するIssue番号を含めてください
+   - CIが通過することを確認してください
 
-[v0.2.1]: https://github.com/herring101/gather_files/compare/v0.2.0...v0.2.1
+5. レビュー
+   - レビューのコメントに対応してください
+   - 必要に応じて変更を加えてください
 
-## [v0.2.0] - 2024-12-23
+6. マージ
+   - レビューが承認されたらマージされます
+   - マージ後、feature/fixブランチは削除されます
 
-### Added
-- .gitignoreの内容を[exclude]セクションに統合する機能
-  - `--use-gitignore`フラグでCLIから制御可能
-  - .gatherファイルの`use_gitignore`設定で制御可能
-  - 重複パターンは自動的に除外
+## リリースプロセス
 
-### Changed
-- .gatherファイルのデフォルトテンプレートを更新
-  - `use_gitignore=yes`をデフォルト設定として追加
+1. developブランチでの準備
+   - バージョン番号の更新
+   - CHANGELOGの更新
 
-## [v0.1.0] - 2024-12-22
+2. mainブランチへのマージ
+   - developからmainへのPR作成
+   - 最終確認とマージ
 
-### Added
-- 基本的なファイル収集機能
-  - 再帰的なディレクトリ走査
-  - ファイル内容の収集
-- 設定ファイル(.gather)サポート
-  - max_lines制限
-  - max_file_size制限
-  - バイナリファイルのスキップ
-  - 除外パターン([exclude])
-  - 内容スキップパターン([skip])
-  - 含める拡張子([include])
-- CLIオプション
-  - カスタム出力先(`--output`)
-  - タイムスタンプ付きファイル名(`--timestamp`)
-  - VS Codeで自動で開く(`--no-open`で無効化)
-- クロスプラットフォーム対応
-  - Windows, macOS, Linux用のバイナリ
-  - プラットフォーム固有のインストールスクリプト
+3. タグ付けとリリース
+   - バージョンタグの作成
+   - GitHub Releaseの作成
 
-[v0.2.0]: https://github.com/herring101/gather_files/compare/v0.1.0...v0.2.0
-[v0.1.0]: https://github.com/herring101/gather_files/releases/tag/v0.1.0
+## 開発環境のセットアップ
+
+```bash
+# リポジトリのクローン
+git clone https://github.com/herring101/gather_files
+cd gather_files
+
+# 開発ブランチの作成
+git checkout -b feature/your-feature develop
+
+# 依存関係のインストール
+cargo build
+
+# テストの実行
+cargo test
+
+# フォーマットの確認
+cargo fmt -- --check
+
+# Lintの実行
+cargo clippy
+```
+
+## ヘルプが必要な場合
+
+質問や支援が必要な場合は、お気軽にIssueを作成してください。

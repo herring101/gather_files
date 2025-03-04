@@ -33,7 +33,8 @@ pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
             format!("{}**", pat) // ディレクトリパターンの場合
         } else if pat.starts_with('.')
             && pat.len() > 1
-            && pat.chars().skip(1).all(|c| !c.is_whitespace() && c != '/') {
+            && pat.chars().skip(1).all(|c| !c.is_whitespace() && c != '/')
+        {
             // 拡張子のみの指定の場合（例: .py）
             format!("**/*{}", pat)
         } else if !pat.contains('/') && !pat.contains('*') {
