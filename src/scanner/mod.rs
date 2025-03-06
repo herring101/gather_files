@@ -4,6 +4,7 @@ mod counter;
 mod sort;
 mod utils;
 mod walker;
+pub mod detector;
 
 use counter::ProcessCounter;
 use std::fs::{self, File};

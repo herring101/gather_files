@@ -96,6 +96,20 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                             let v_lower = v.to_lowercase();
                             params.use_gitignore = ["yes", "true", "1"].contains(&v_lower.as_str());
                         }
+                        "first_run_completed" => {
+                            let v_lower = v.to_lowercase();
+                            params.first_run_completed = ["yes", "true", "1"].contains(&v_lower.as_str());
+                        }
+                        "max_files_per_dir" => {
+                            if let Ok(n) = v.parse::<usize>() {
+                                params.max_files_per_dir = n;
+                            }
+                        }
+                        "max_auto_file_size" => {
+                            if let Ok(n) = v.parse::<u64>() {
+                                params.max_auto_file_size = n;
+                            }
+                        }
                         _ => {
                             eprintln!("Unknown setting key: {}", k);
                         }

@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.2.7] - 2025-03-06
+
+### Added
+- Enhanced first-run experience
+  - First-run now prompts users to review configuration after creating the settings file
+  - Added automatic detection of large directories
+  - Auto-excludes common large directories like node_modules and venv
+
+### Changed
+- Extended configuration file options
+  - Added first_run_completed flag
+  - Added max_files_per_dir threshold setting
+  - Added max_auto_file_size threshold setting
+
+[v0.2.7]: https://github.com/herring101/gather_files/compare/v0.2.6...v0.2.7
+
 ## [v0.2.6] - 2025-03-06
 
 ### Fixed

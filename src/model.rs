@@ -29,6 +29,9 @@ pub struct ConfigParams {
     pub use_timestamp: bool,           // 追加: タイムスタンプ付きの出力ファイル名を使用
     pub open_output: bool,             // 追加: 出力ファイルをVSCodeで開く
     pub use_gitignore: bool,           // 追加: .gitignore を使用
+    pub first_run_completed: bool,     // 追加: 初回実行が完了したかどうか
+    pub max_files_per_dir: usize,      // 追加: ディレクトリ内のファイル数の閾値
+    pub max_auto_file_size: u64        // 追加: 自動除外するファイルサイズの閾値（バイト）
 }
 
 impl Default for ConfigParams {
@@ -44,6 +47,9 @@ impl Default for ConfigParams {
             use_timestamp: false, // デフォルト: false
             open_output: true,    // デフォルト: true
             use_gitignore: false, // デフォルト: false
+            first_run_completed: false, // デフォルト: false
+            max_files_per_dir: 100,     // デフォルト: 100ファイル
+            max_auto_file_size: 1000000 // デフォルト: 1MB
         }
     }
 }
