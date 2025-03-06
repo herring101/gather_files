@@ -5,7 +5,6 @@
 このプロジェクトでは以下のブランチ構成を採用しています：
 
 - `main`: 安定版のコード（リリース用）
-- `develop`: 開発版のコード（次期リリースの準備用）
 - `feature/*`: 新機能開発用
 - `fix/*`: バグ修正用
 
@@ -18,7 +17,7 @@
 2. ブランチの作成
    - 新機能開発: `feature/機能名`
    - バグ修正: `fix/バグ内容`
-   - developブランチから分岐してください
+   - mainブランチから分岐してください
 
 3. 開発とコミット
    - コミットメッセージは具体的に
@@ -26,7 +25,7 @@
    - `cargo fmt`と`cargo clippy`を実行してください
 
 4. プルリクエスト
-   - developブランチに向けてPRを作成
+   - mainブランチに向けてPRを作成
    - PRの説明には関連するIssue番号を含めてください
    - CIが通過することを確認してください
 
@@ -40,17 +39,15 @@
 
 ## リリースプロセス
 
-1. developブランチでの準備
+1. リリース準備
    - バージョン番号の更新
    - CHANGELOGの更新
+   - mainブランチで直接行うか、PRを通して行います
 
-2. mainブランチへのマージ
-   - developからmainへのPR作成
-   - 最終確認とマージ
-
-3. タグ付けとリリース
-   - バージョンタグの作成
-   - GitHub Releaseの作成
+2. タグ付けとリリース
+   - バージョンタグの作成 (`git tag -a vX.Y.Z -m "Version X.Y.Z - 説明")`
+   - タグをプッシュ (`git push origin vX.Y.Z`)
+   - GitHub Actionsによって自動的にリリースが作成されます
 
 ## 開発環境のセットアップ
 
@@ -60,7 +57,7 @@ git clone https://github.com/herring101/gather_files
 cd gather_files
 
 # 開発ブランチの作成
-git checkout -b feature/your-feature develop
+git checkout -b feature/your-feature main
 
 # 依存関係のインストール
 cargo build
