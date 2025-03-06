@@ -89,7 +89,7 @@ pub fn run(
 
                 if !has_matching_children {
                     // このディレクトリ配下の全ファイルをスキャンして、マッチするものがあるか確認
-                    let child_entries = collect_entries(&path, &exclude_globset, true);
+                    let child_entries = collect_entries(path, &exclude_globset, true);
                     for child_entry in child_entries {
                         let child_path = child_entry.path();
                         let child_rel = match child_path.strip_prefix(target_dir) {

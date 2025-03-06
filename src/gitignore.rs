@@ -72,7 +72,7 @@ mod tests {
         writeln!(file, "# Node.js")?;
         writeln!(file, "/node_modules")?;
         writeln!(file, "*.log")?;
-        writeln!(file, "")?;
+        writeln!(file)?;
         writeln!(file, "dist/")?;
         writeln!(file, "# 否定パターン")?;
         writeln!(file, "!keep.log")?;
