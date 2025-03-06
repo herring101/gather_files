@@ -83,7 +83,28 @@ pub fn run(
 
                 let children_match = gs.is_match(Path::new(&dir_with_wildcard));
 
-                if !dir_matches && !children_match {
+                // 親フォルダチェック: このディレクトリの下に含まれるファイルが
+                // includeパターンにマッチするかどうかを確認
+                let mut has_matching_children = dir_matches || children_match;
+                
+                if !has_matching_children {
+                    // このディレクトリ配下の全ファイルをスキャンして、マッチするものがあるか確認
+                    let child_entries = collect_entries(&path, &exclude_globset, true);
+                    for child_entry in child_entries {
+                        let child_path = child_entry.path();
+                        let child_rel = match child_path.strip_prefix(target_dir) {
+                            Ok(r) => r,
+                            Err(_) => child_path,
+                        };
+                        let child_rel_str = child_rel.to_string_lossy();
+                        if gs.is_match(Path::new(&*child_rel_str)) {
+                            has_matching_children = true;
+                            break;
+                        }
+                    }
+                }
+
+                if !has_matching_children {
                     continue;
                 }
             } else if !gs.is_match(Path::new(&*rel_str)) {
