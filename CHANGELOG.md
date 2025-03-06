@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.2.6] - 2025-03-06
+
+### Fixed
+- GLIBC互換性問題の修正
+  - Linuxバイナリを MUSLベースに変更し、幅広い互換性を確保
+  - WSL環境を含む様々なLinuxディストリビューションでの動作を改善
+- バージョン表示の修正
+  - CLIバージョン表示をCargo.tomlから自動取得するように変更
+  - バージョン番号のハードコードを排除
+
+[v0.2.6]: https://github.com/herring101/gather_files/compare/v0.2.5...v0.2.6
+
 ## [v0.2.5] - 2025-03-06
 
 ### Fixed
