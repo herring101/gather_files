@@ -141,7 +141,11 @@ fn count_files_and_size(dir: &Path) -> (usize, u64) {
     let mut total_size = 0;
 
     // 最大深さを3に制限して軽量スキャン
-    for entry in WalkDir::new(dir).max_depth(3).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(dir)
+        .max_depth(3)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         let path = entry.path();
         if path.is_file() {
             file_count += 1;

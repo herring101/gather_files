@@ -98,7 +98,8 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
                         }
                         "first_run_completed" => {
                             let v_lower = v.to_lowercase();
-                            params.first_run_completed = ["yes", "true", "1"].contains(&v_lower.as_str());
+                            params.first_run_completed =
+                                ["yes", "true", "1"].contains(&v_lower.as_str());
                         }
                         "max_files_per_dir" => {
                             if let Ok(n) = v.parse::<usize>() {

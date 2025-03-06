@@ -1,10 +1,10 @@
 // src/scanner/mod.rs
 
 mod counter;
+pub mod detector;
 mod sort;
 mod utils;
 mod walker;
-pub mod detector;
 
 use counter::ProcessCounter;
 use std::fs::{self, File};
