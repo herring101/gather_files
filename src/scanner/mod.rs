@@ -86,7 +86,7 @@ pub fn run(
                 // 親フォルダチェック: このディレクトリの下に含まれるファイルが
                 // includeパターンにマッチするかどうかを確認
                 let mut has_matching_children = dir_matches || children_match;
-                
+
                 if !has_matching_children {
                     // このディレクトリ配下の全ファイルをスキャンして、マッチするものがあるか確認
                     let child_entries = collect_entries(&path, &exclude_globset, true);
