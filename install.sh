@@ -17,7 +17,7 @@ case "$(uname -sm)" in
     "Linux x86_64")
         PLATFORM="linux"
         ARCH="amd64"
-        FILE="gather_files-linux-amd64"
+        FILE="gather_files-linux-musl-amd64"
         ;;
     "Linux aarch64")
         PLATFORM="linux"
