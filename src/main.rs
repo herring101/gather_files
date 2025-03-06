@@ -7,8 +7,8 @@ mod scanner;
 use crate::args::parse_args;
 use crate::config::load_config_file;
 use crate::gitignore::parse_gitignore;
-use crate::scanner::run;
 use crate::scanner::detector::{detect_large_directories, generate_exclude_patterns};
+use crate::scanner::run;
 
 use chrono::Local;
 use std::fs;
@@ -40,31 +40,35 @@ fn main() {
         // 大規模ディレクトリを検出
         eprintln!("プロジェクト内の大規模ディレクトリを検出しています...");
         let large_dirs = detect_large_directories(&cli_opts.target_dir, 100, 1000000);
-        
+
         // 除外パターンを生成
         let auto_exclude_patterns = generate_exclude_patterns(&large_dirs, &cli_opts.target_dir);
-        
+
         // 検出結果を表示
         if !large_dirs.is_empty() {
-            eprintln!("以下の大規模ディレクトリを検出しました:
-");
+            eprintln!(
+                "以下の大規模ディレクトリを検出しました:
+"
+            );
             for dir in &large_dirs {
                 let rel_path = match dir.path.strip_prefix(&cli_opts.target_dir) {
                     Ok(p) => p.to_string_lossy(),
                     Err(_) => dir.path.to_string_lossy(),
                 };
-                eprintln!("  - {}/: {} ファイル ({:.2} MB) - {}", 
-                    rel_path, 
+                eprintln!(
+                    "  - {}/: {} ファイル ({:.2} MB) - {}",
+                    rel_path,
                     dir.file_count,
                     dir.total_size as f64 / 1_000_000.0,
                     dir.reason
                 );
             }
-            eprintln!("");
+            eprintln!();
         }
-        
+
         // .gather ファイルのテンプレートを作成
-        let mut sample = String::from(r#"[settings]
+        let mut sample = String::from(
+            r#"[settings]
 max_lines=1000
 max_file_size=500000
 skip_binary=yes
@@ -79,18 +83,23 @@ max_auto_file_size=1000000
 [exclude]
 gather/
 .gather
-"#);
-        
+"#,
+        );
+
         // 検出した大規模ディレクトリを除外パターンに追加
         if !auto_exclude_patterns.is_empty() {
             for pattern in auto_exclude_patterns {
-                sample.push_str(&format!("{}
-", pattern));
+                sample.push_str(&format!(
+                    "{}
+",
+                    pattern
+                ));
             }
         }
-        
+
         // スキップセクションとインクルードセクションを追加
-        sample.push_str(r#"
+        sample.push_str(
+            r#"
 [skip]
 *.pdf
 
@@ -100,24 +109,33 @@ gather/
 # *.md         # すべてのMarkdownファイル
 # src/**/*.rs  # srcディレクトリ以下のRustファイル
 # *.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
-"#);
-        
+"#,
+        );
+
         match fs::write(&gather_path, sample) {
             Ok(_) => {
-                eprintln!("
+                eprintln!(
+                    "
 .gatherファイルを生成しました: {}
-", gather_path.display());
+",
+                    gather_path.display()
+                );
                 eprintln!("プロジェクトを効率的に収集するために、まず.gatherファイルを開いて設定を確認・調整してください。");
                 eprintln!("特に[exclude]セクションで、不要なディレクトリやファイルを除外することをお勧めします。");
-                eprintln!("設定が完了したら、再度コマンドを実行してください。
-");
-                
+                eprintln!(
+                    "設定が完了したら、再度コマンドを実行してください。
+"
+                );
+
                 // .gather ファイルをエディタで開く
                 match Command::new("code").arg(&gather_path).status() {
                     Ok(_) => (),
-                    Err(e) => eprintln!("Warning: VS Code で.gatherファイルを開けませんでした: {}", e),
+                    Err(e) => eprintln!(
+                        "Warning: VS Code で.gatherファイルを開けませんでした: {}",
+                        e
+                    ),
                 }
-                
+
                 // 初回実行時はここで終了
                 process::exit(0);
             }
@@ -130,15 +148,12 @@ gather/
 
     // 5) .gather 読み込み
     let mut config_params = load_config_file(&gather_path);
-    
+
     // 初回実行完了フラグをチェック
     if !config_params.first_run_completed {
         // .gatherファイルを更新して初回実行完了フラグをセット
         let content = match fs::read_to_string(&gather_path) {
-            Ok(content) => {
-                let updated_content = content.replace("first_run_completed=no", "first_run_completed=yes");
-                updated_content
-            },
+            Ok(content) => content.replace("first_run_completed=no", "first_run_completed=yes"),
             Err(_) => {
                 eprintln!("Warning: .gatherファイルの読み込みに失敗しました");
                 // 読み込み失敗時はそのまま続行
@@ -146,7 +161,7 @@ gather/
                 String::new()
             }
         };
-        
+
         if !content.is_empty() {
             if let Err(e) = fs::write(&gather_path, content) {
                 eprintln!("Warning: .gatherファイルの更新に失敗しました: {}", e);
