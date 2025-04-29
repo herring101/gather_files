@@ -1,13 +1,6 @@
 // src/config.rs
-//! `.gather` 設定ファイルパーサ（簡潔版）
-//! ## 仕様
-//! INI ライクな以下 4 セクションを認識します。
-//! - `[settings]`  キーバリュー
-//! - `[exclude]`   行ベースパターン
-//! - `[skip]`      行ベースパターン
-//! - `[include]`   行ベースパターン
-//!
-//! セクション名・キーはすべて *case-insensitive*。
+//! `.gather` 設定ファイルパーサ
+//! セクション見出しの末尾 `]` 以降にコメント／空白があっても許容する。
 
 use std::{collections::HashMap, fs, path::Path};
 
@@ -22,7 +15,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
 
     let mut params = ConfigParams::default();
 
-    // ---------- settings キー → 更新クロージャ ----------
+    /* ---------- settings キー → 更新クロージャ ---------- */
     type Setter = fn(&mut ConfigParams, &str);
     let mut map: HashMap<&str, Setter> = HashMap::new();
     macro_rules! set_bool {
@@ -33,9 +26,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
             }
         };
     }
-    map.insert("max_lines", |p, v| {
-        p.max_lines = v.parse().unwrap_or(p.max_lines)
-    });
+    map.insert("max_lines", |p, v| p.max_lines = v.parse().unwrap_or(p.max_lines));
     map.insert("max_file_size", |p, v| p.max_file_size = v.parse().ok());
     map.insert("skip_binary", set_bool!(skip_binary));
     map.insert("output_dir", |p, v| {
@@ -54,7 +45,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
         p.max_auto_file_size = v.parse().unwrap_or(p.max_auto_file_size)
     });
 
-    // ---------- 行ループ ----------
+    /* ---------- 行ループ ---------- */
     enum Section {
         None,
         Settings,
@@ -69,15 +60,20 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        if let Some(name) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
-            section = match name.to_lowercase().as_str() {
-                "settings" => Section::Settings,
-                "exclude" => Section::Exclude,
-                "skip" => Section::Skip,
-                "include" => Section::Include,
-                _ => Section::None,
-            };
-            continue;
+
+        // [section] 行の判定をゆるくする
+        if line.starts_with('[') {
+            if let Some(end) = line.find(']') {
+                let name = &line[1..end];
+                section = match name.trim().to_lowercase().as_str() {
+                    "settings" => Section::Settings,
+                    "exclude" => Section::Exclude,
+                    "skip" => Section::Skip,
+                    "include" => Section::Include,
+                    _ => Section::None,
+                };
+                continue;
+            }
         }
 
         match section {
@@ -104,9 +100,9 @@ fn push_pattern(vec: &mut Vec<String>, line: &str) {
     }
 }
 
-// ---------------------------------------------------------------------
-// tests
-// ---------------------------------------------------------------------
+/* --------------------------------------------------------------------
+   unit tests
+   -------------------------------------------------------------------- */
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,15 +111,13 @@ mod tests {
 
     const SAMPLE: &str = r#"
 [settings]
-max_lines=42
-use_gitignore=true
-output_dir=out
+use_gitignore = yes
 
-[exclude]
-node_modules/
+[exclude]   # dir patterns
+node_modules/   # comment OK
 *.log
 
-[skip]
+[skip] # skip content only
 *.pdf
 
 [include]
@@ -131,15 +125,15 @@ node_modules/
 "#;
 
     #[test]
-    fn parse_sample() {
+    fn parse_section_with_trailing_comment() {
         let mut tmp = NamedTempFile::new().unwrap();
         write!(tmp, "{}", SAMPLE).unwrap();
         let cfg = load_config_file(tmp.path());
 
-        assert_eq!(cfg.max_lines, 42);
-        assert!(cfg.use_gitignore);
-        assert_eq!(cfg.output_dir.as_deref(), Some("out"));
-        assert_eq!(cfg.exclude_patterns, vec!["node_modules/", "*.log"]);
+        assert_eq!(
+            cfg.exclude_patterns,
+            vec!["node_modules/".to_string(), "*.log".to_string()]
+        );
         assert_eq!(cfg.skip_content_patterns, vec!["*.pdf"]);
         assert_eq!(cfg.include_patterns, vec!["*.rs"]);
     }

@@ -1,10 +1,9 @@
 //! Library entry-point for **gather_files**
 //!
-//! すべてのビジネスロジックをここに集約し、`src/main.rs` は
-//! *薄い CLI ラッパ* として保守します。
+//! All business logic lives here; `src/main.rs` stays a *thin* CLI wrapper.
 
-#![deny(warnings)] // ← **全警告をコンパイルエラー扱い** に戻す
-#![warn(missing_docs)] // （missing_docs も含めて解決済み）
+#![deny(warnings)]
+#![warn(missing_docs)]
 
 /* ────────────────────── module graph ────────────────────── */
 
@@ -13,9 +12,9 @@ mod config;
 mod gitignore;
 mod model;
 mod scanner;
-pub mod updater; // self-update
+pub mod updater; // self‑update
 
-/* ────────────────── public surface re-exports ───────────── */
+/* ────────────────── public surface re‑exports ───────────── */
 
 pub use crate::args::parse_args;
 pub use model::{CLIOptions as GatherOptions, ConfigParams};
@@ -32,6 +31,13 @@ use anyhow::Context;
 /// Scan & gather source files according to `GatherOptions`.
 ///
 /// Returns the **absolute path** of the generated output file.
+///
+/// Behaviour  
+/// ──────────  
+/// * **First run** (no `.gather` yet): a template is generated *and the scan
+///   continues* with those default settings. A warning is printed so that the
+///   user can review the file afterwards.  
+/// * Subsequent runs: the existing `.gather` is honoured as before.
 pub fn gather(opts: GatherOptions) -> anyhow::Result<PathBuf> {
     use crate::config::load_config_file;
     use crate::gitignore::parse_gitignore;
@@ -50,10 +56,12 @@ pub fn gather(opts: GatherOptions) -> anyhow::Result<PathBuf> {
         .clone()
         .unwrap_or_else(|| opts.target_dir.join(".gather"));
 
-    /* --- create template on first run --- */
+    // ───────────────────────── first run ──────────────────────────
     if !gather_path.exists() {
         create_gather_template(&opts, &gather_path)?;
-        anyhow::bail!(".gather を生成しました。編集後に再実行してください");
+        eprintln!(
+            ".gather を生成しました (デフォルト設定でスキャンを続行します。後で編集してください)…"
+        );
     }
 
     /* --- load & merge config --- */
@@ -92,20 +100,38 @@ pub fn gather(opts: GatherOptions) -> anyhow::Result<PathBuf> {
 
 /* ─────────────────── helper functions ───────────────────── */
 
+/// Create a default `.gather` file and open it in VS Code.
+///
+/// Auto‑detected large directory patterns are inserted **inside the `[exclude]`
+/// section** so that they are excluded from the scan by default.
 fn create_gather_template(opts: &GatherOptions, path: &Path) -> anyhow::Result<()> {
     use crate::scanner::detector::{detect_large_directories, generate_exclude_patterns};
     use std::fs;
 
     eprintln!("初回実行: .gather を生成します …");
 
-    /* auto-detect large directories */
+    /* auto‑detect large directories */
     let dirs = detect_large_directories(&opts.target_dir, 100, 1_000_000);
     let auto = generate_exclude_patterns(&dirs, &opts.target_dir);
 
-    /* default template + auto patterns */
+    /* default template + auto patterns (under [exclude]) */
     let mut tmpl = include_str!("templates/gather_default.toml").to_string();
-    for p in auto {
-        tmpl.push_str(&format!("{p}\n"));
+
+    if !auto.is_empty() {
+        let header = "[exclude]";
+        if let Some(pos) = tmpl.find(header) {
+            let insert_at = tmpl[pos..]
+                .find('\n')
+                .map(|off| pos + off + 1)
+                .unwrap_or_else(|| tmpl.len());
+            let block: String = auto.iter().map(|p| format!("{p}\n")).collect();
+            tmpl.insert_str(insert_at, &block);
+        } else {
+            tmpl.push_str("\n[exclude]\n");
+            for p in &auto {
+                tmpl.push_str(&format!("{p}\n"));
+            }
+        }
     }
 
     fs::write(path, tmpl)?;
