@@ -18,7 +18,7 @@ pub enum OutlineFormat {
 
 #[derive(Debug)]
 pub struct CLIOptions {
-    pub mode: RunMode, // ←追加
+    pub mode: RunMode,
     pub target_dir: PathBuf,
     pub output_file: Option<PathBuf>,
     pub config_file: Option<PathBuf>,
@@ -43,6 +43,7 @@ pub struct ConfigParams {
     pub exclude_patterns: Vec<String>,
     pub skip_content_patterns: Vec<String>,
     pub include_patterns: Vec<String>,
+    pub outline_patterns: Vec<String>, // ←★ new
     pub use_timestamp: bool,
     pub open_output: bool,
     pub use_gitignore: bool,
@@ -61,6 +62,7 @@ impl Default for ConfigParams {
             exclude_patterns: vec![],
             skip_content_patterns: vec![],
             include_patterns: vec![],
+            outline_patterns: vec![], // ←★
             use_timestamp: false,
             open_output: true,
             use_gitignore: false,

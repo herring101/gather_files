@@ -1,4 +1,4 @@
-// src/scanner/mod.rs – v0.3.1-fix
+// src/scanner/mod.rs – v0.4.1  (outline セクション対応)
 
 mod counter;
 pub mod detector;
@@ -12,6 +12,7 @@ use utils::{build_globset, is_binary_file};
 use walker::collect_entries;
 
 use crate::model::ConfigParams;
+use crate::outline::registry::providers; // ←★ 共有プロバイダ
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -23,7 +24,8 @@ use std::path::{Path, PathBuf};
 enum OmitReason {
     Binary,
     TooLarge,
-    Pattern,
+    Pattern, // skip
+    Outline, // ←★ new
 }
 
 impl std::fmt::Display for OmitReason {
@@ -32,6 +34,7 @@ impl std::fmt::Display for OmitReason {
             OmitReason::Binary => write!(f, "binary"),
             OmitReason::TooLarge => write!(f, "too-large"),
             OmitReason::Pattern => write!(f, "pattern"),
+            OmitReason::Outline => write!(f, "outline"),
         }
     }
 }
@@ -53,9 +56,10 @@ pub fn run(
     } else {
         build_globset(&config.include_patterns)
     };
+    let outline_globset = build_globset(&config.outline_patterns); // ★
 
     /* ============================================================
-    1st pass – 省略判定マップを作成
+       1st pass – 省略判定マップ
     ============================================================ */
     let mut file_entries = collect_entries(target_dir, &exclude_globset, true);
     file_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
@@ -67,7 +71,7 @@ pub fn run(
         let path = entry.path();
         let rel: PathBuf = path.strip_prefix(target_dir).unwrap_or(path).to_path_buf();
 
-        /* include フィルタ – マッチしないものは省略 */
+        /* include フィルタ */
         if let Some(gs) = &include_globset {
             if !gs.is_match(&rel) {
                 omitted.insert(rel, OmitReason::Pattern);
@@ -75,7 +79,7 @@ pub fn run(
             }
         }
 
-        /* skip パターン */
+        /* skip pattern */
         if let Some(gs) = &skip_globset {
             if gs.is_match(&rel) {
                 omitted.insert(rel, OmitReason::Pattern);
@@ -83,7 +87,15 @@ pub fn run(
             }
         }
 
-        /* バイナリ検出 */
+        /* outline pattern – skip より後ろ / exclude より前 */
+        if let Some(gs) = &outline_globset {
+            if gs.is_match(&rel) {
+                omitted.insert(rel, OmitReason::Outline);
+                continue;
+            }
+        }
+
+        /* バイナリ */
         if config.skip_binary && is_binary_file(path) {
             omitted.insert(rel, OmitReason::Binary);
             continue;
@@ -100,7 +112,7 @@ pub fn run(
     }
 
     /* ============================================================
-    2nd pass – ディレクトリツリー出力
+       2nd pass – ツリー出力
     ============================================================ */
     let mut tree_entries = walker::collect_entries(target_dir, &exclude_globset, false);
     tree_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
@@ -136,24 +148,50 @@ pub fn run(
     writeln!(outfile).ok();
 
     /* ============================================================
-    3rd pass – ファイル内容出力（省略対象はスキップ）
+       3rd pass – 本文 / アウトライン出力
     ============================================================ */
     for (idx, entry) in file_entries.iter().enumerate() {
         let path = entry.path();
         let rel: PathBuf = path.strip_prefix(target_dir).unwrap_or(path).to_path_buf();
         let rel_str = rel.to_string_lossy();
 
-        /* 省略対象ならカウンタだけ更新 */
+        /* --- 省略判定 ----------------------------------------- */
         if let Some(reason) = omitted.get(&rel) {
             match reason {
                 OmitReason::Pattern => counter.increment_skipped_pattern(),
                 OmitReason::Binary => counter.increment_skipped_binary(),
                 OmitReason::TooLarge => counter.increment_skipped_size(),
+                OmitReason::Outline => {
+                    // アウトラインのみを出力
+                    eprintln!(
+                        "({}/{}) Outline: {}",
+                        idx + 1,
+                        file_entries.len(),
+                        path.display()
+                    );
+                    writeln!(outfile, "### {}", rel_str).ok();
+                    writeln!(outfile, "```").ok();
+
+                    let src = fs::read_to_string(path).unwrap_or_default();
+                    if let Some(p) = providers().iter().find(|p| p.supports_dyn(path)) {
+                        if let Ok(syms) = p.extract_dyn(path, &src) {
+                            for s in syms {
+                                writeln!(outfile, "- **{}** {}", s.kind, s.ident).ok();
+                            }
+                        }
+                    } else {
+                        writeln!(outfile, "(outline not supported)").ok();
+                    }
+
+                    writeln!(outfile, "```").ok();
+                    writeln!(outfile).ok();
+                    counter.increment_processed();
+                }
             }
-            continue;
+            continue; // 本文は出力しない
         }
 
-        /* ---- 本文を出力 ---- */
+        /* --- 本文出力 ----------------------------------------- */
         eprintln!(
             "({}/{}) Processing: {}",
             idx + 1,
@@ -175,7 +213,6 @@ pub fn run(
             }
         };
         let reader = BufReader::new(file);
-
         let mut lines = 0;
         for line in reader.lines() {
             match line {
@@ -194,14 +231,13 @@ pub fn run(
                 }
             }
         }
-
         writeln!(outfile, "```").ok();
         writeln!(outfile).ok();
         counter.increment_processed();
     }
 
     /* ============================================================
-    summary
+       summary
     ============================================================ */
     counter.print_summary();
     Ok(())

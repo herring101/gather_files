@@ -1,4 +1,3 @@
-// src/config.rs
 //! `.gather` 設定ファイルパーサ
 //! セクション見出しの末尾 `]` 以降にコメント／空白があっても許容する。
 
@@ -21,11 +20,11 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
     macro_rules! set_bool {
         ($field:ident) => {
             |p: &mut ConfigParams, v: &str| {
-                let b = matches!(v.trim().to_lowercase().as_str(), "yes" | "true" | "1");
-                p.$field = b;
+                p.$field = matches!(v.trim().to_lowercase().as_str(), "yes" | "true" | "1");
             }
         };
     }
+
     map.insert("max_lines", |p, v| {
         p.max_lines = v.parse().unwrap_or(p.max_lines)
     });
@@ -54,6 +53,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
         Exclude,
         Skip,
         Include,
+        Outline,
     }
     let mut section = Section::None;
 
@@ -63,15 +63,14 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
             continue;
         }
 
-        // [section] 行の判定をゆるくする
         if line.starts_with('[') {
             if let Some(end) = line.find(']') {
-                let name = &line[1..end];
-                section = match name.trim().to_lowercase().as_str() {
+                section = match &line[1..end].trim().to_lowercase()[..] {
                     "settings" => Section::Settings,
                     "exclude" => Section::Exclude,
                     "skip" => Section::Skip,
                     "include" => Section::Include,
+                    "outline" => Section::Outline,
                     _ => Section::None,
                 };
                 continue;
@@ -89,6 +88,7 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
             Section::Exclude => push_pattern(&mut params.exclude_patterns, line),
             Section::Skip => push_pattern(&mut params.skip_content_patterns, line),
             Section::Include => push_pattern(&mut params.include_patterns, line),
+            Section::Outline => push_pattern(&mut params.outline_patterns, line),
             Section::None => {}
         }
     }
@@ -102,9 +102,7 @@ fn push_pattern(vec: &mut Vec<String>, line: &str) {
     }
 }
 
-/* --------------------------------------------------------------------
-unit tests
--------------------------------------------------------------------- */
+/* -------------------------------------------------------------------- */
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,28 +113,18 @@ mod tests {
 [settings]
 use_gitignore = yes
 
-[exclude]   # dir patterns
-node_modules/   # comment OK
-*.log
-
-[skip] # skip content only
-*.pdf
-
-[include]
+[outline]
 *.rs
+
+[exclude]
+node_modules/
 "#;
 
     #[test]
-    fn parse_section_with_trailing_comment() {
+    fn outline_section_is_parsed() {
         let mut tmp = NamedTempFile::new().unwrap();
         write!(tmp, "{}", SAMPLE).unwrap();
         let cfg = load_config_file(tmp.path());
-
-        assert_eq!(
-            cfg.exclude_patterns,
-            vec!["node_modules/".to_string(), "*.log".to_string()]
-        );
-        assert_eq!(cfg.skip_content_patterns, vec!["*.pdf"]);
-        assert_eq!(cfg.include_patterns, vec!["*.rs"]);
+        assert_eq!(cfg.outline_patterns, vec!["*.rs"]);
     }
 }

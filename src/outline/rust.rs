@@ -2,7 +2,7 @@
 //!
 //! Rust のアウトライン実装 (syn ベース)
 
-use super::{OutlineProvider, Symbol};
+use crate::outline::provider::{OutlineProvider, Symbol};
 use anyhow::Context;
 use std::path::Path;
 use syn::{visit::Visit, File, Item, Visibility};
