@@ -1,4 +1,4 @@
-//! Integration test – end-to-end flow of `gather_files`.
+//! Integration test – end-to-end flow of `gather`.
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -16,7 +16,7 @@ fn first_run_creates_gather_then_success_on_second_run() {
     fs::write(root.join("src").join("main.rs"), "fn main() {}").unwrap();
 
     /* --- 1st run: should create .gather and exit with non-zero --- */
-    Command::cargo_bin("gather_files")
+    Command::cargo_bin("gather")
         .unwrap()
         .current_dir(root) // run inside temp dir for cleaner paths
         .arg(".") // scan current directory
@@ -31,7 +31,7 @@ fn first_run_creates_gather_then_success_on_second_run() {
     fs::write(&gather_path, patched).unwrap();
 
     /* --- 2nd run: should succeed and create output file --- */
-    Command::cargo_bin("gather_files")
+    Command::cargo_bin("gather")
         .unwrap()
         .current_dir(root)
         .arg(".")

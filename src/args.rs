@@ -1,9 +1,9 @@
-// src/args.rs
+//! src/args.rs
 //! CLI 引数パーサ
 //!
 //! **使い方**
 //! ```bash
-//! gather_files <DIR> [OPTIONS]
+//! gather <DIR> [OPTIONS]
 //! ```
 
 use clap::{ArgAction, Parser};
@@ -14,7 +14,7 @@ use crate::model::CLIOptions;
 /// 内部用 – clap 派生構造体
 #[derive(Debug, Parser)]
 #[command(
-    name = "gather_files",
+    name = "gather",              // ← ここを変更
     version,
     author = "herring101",
     about = "Collect project files and format them for LLM context.",
@@ -96,14 +96,14 @@ mod tests {
     #[test]
     fn positional_directory_is_required() {
         // omit DIR → clap should error
-        let res = Args::try_parse_from(["gather_files"]);
+        let res = Args::try_parse_from(["gather"]);
         assert!(res.is_err());
     }
 
     #[test]
     fn parse_multiple_patterns() {
-        let args = Args::try_parse_from(["gather_files", "./proj", "-p", "*.log", "-p", "build/"])
-            .unwrap();
+        let args =
+            Args::try_parse_from(["gather", "./proj", "-p", "*.log", "-p", "build/"]).unwrap();
         assert_eq!(args.patterns, vec!["*.log", "build/"]);
     }
 }

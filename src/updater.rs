@@ -1,8 +1,7 @@
-//! Self-update implementation – downloads the latest binary from GitHub
-//! Releases and replaces the currently-running executable in-place.
+//! Self‑update implementation – downloads the latest "gather" binary.
 //!
 //! ```bash
-//! gather_files self-update
+//! gather self-update
 //! ```
 //!
 //! 成功時は `Updated 🎉 → vX.Y.Z`、最新版の場合は
@@ -11,15 +10,15 @@
 use self_update::{backends::github::Update, Status};
 use std::error::Error;
 
-/// Run the self-update process.
+/// Run the self‑update process.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let target = platform_target();
 
     let status = Update::configure()
         .repo_owner("herring101")
-        .repo_name("gather_files")
-        .bin_name("gather_files")
-        .target(&target)
+        .repo_name("gather_files") // GitHub リポジトリ名は据え置き
+        .bin_name("gather") // ← 新バイナリ名
+        .target(&target) // gather‑<target>.* を期待
         .current_version(env!("CARGO_PKG_VERSION"))
         .show_download_progress(true)
         .build()?
@@ -34,6 +33,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
 /* ───────────────────────── helpers ───────────────────────── */
 
+/// Return the self_update "target" string (without bin prefix).
 fn platform_target() -> String {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("linux", "x86_64") => "linux-musl-amd64".to_string(),

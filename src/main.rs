@@ -1,4 +1,15 @@
 //! Binary entry-point – thin CLI wrapper around the library.
+//!
+//! ```bash
+//! # 初回は .gather を生成してエラー終了
+//! gather .
+//!
+//! # .gather を編集して再実行
+//! gather .
+//!
+//! # 自己アップデート
+//! gather self-update
+//! ```
 
 use gather_files_lib as lib;
 
