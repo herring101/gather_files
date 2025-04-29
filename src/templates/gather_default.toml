@@ -1,0 +1,21 @@
+[settings]
+max_lines         = 1000       # 各ファイルの最大読み込み行
+max_file_size     = 500000     # スキップ閾値 (bytes)
+skip_binary       = yes
+output_dir        = gather
+use_timestamp     = no
+open_output       = yes
+use_gitignore     = no
+first_run_completed = no
+max_files_per_dir   = 100
+max_auto_file_size  = 1000000   # 1 MB
+
+[exclude]           # 除外パターン
+gather/
+.gather
+
+[skip]              # 内容だけスキップ
+*.pdf
+
+[include]           # 必ず含めたいパターン
+# (空ならすべて含む)

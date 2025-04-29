@@ -1,11 +1,17 @@
-//! Self-update implementation (GitHub Releases).
+//! Self-update implementation – downloads the latest binary from GitHub
+//! Releases and replaces the currently-running executable in-place.
 //!
-//! `gather_files self-update` で呼び出される。
-//! 成功すると実行中のバイナリを最新リリースのものに置き換える。
+//! ```bash
+//! gather_files self-update
+//! ```
+//!
+//! 成功時は `Updated 🎉 → vX.Y.Z`、最新版の場合は
+//! `Already up-to-date` を標準出力へ返す。
 
 use self_update::{backends::github::Update, Status};
 use std::error::Error;
 
+/// Run the self-update process.
 pub fn run() -> Result<(), Box<dyn Error>> {
     let target = platform_target();
 
@@ -25,6 +31,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
     Ok(())
 }
+
+/* ───────────────────────── helpers ───────────────────────── */
 
 fn platform_target() -> String {
     match (std::env::consts::OS, std::env::consts::ARCH) {
