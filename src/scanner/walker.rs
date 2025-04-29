@@ -24,10 +24,10 @@ pub fn collect_entries(
     };
 
     WalkDir::new(target_dir)
-        .into_iter()                                   // << fix: call into_iter() first
+        .into_iter() // << fix: call into_iter() first
         .filter_entry(|e| !(e.file_type().is_dir() && matches_exclude(e)))
         .flatten()
-        .filter(|e| !matches_exclude(e))               // drop excluded files & dirs
+        .filter(|e| !matches_exclude(e)) // drop excluded files & dirs
         .filter(|e| !files_only || e.file_type().is_file())
         .collect()
 }
