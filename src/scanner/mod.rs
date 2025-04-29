@@ -1,4 +1,4 @@
-// src/scanner/mod.rs
+// src/scanner/mod.rs – v0.3.1
 
 mod counter;
 pub mod detector;
@@ -7,14 +7,34 @@ mod utils;
 mod walker;
 
 use counter::ProcessCounter;
-use std::fs::{self, File};
-use std::io::{BufRead, BufReader, Write};
-use std::path::Path;
-
-use crate::model::ConfigParams;
 use sort::compare_dir_entry;
 use utils::{build_globset, is_binary_file};
 use walker::collect_entries;
+
+use crate::model::ConfigParams;
+
+use std::collections::HashMap;
+use std::fs::{self, File};
+use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
+
+/// 省略理由
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OmitReason {
+    Binary,
+    TooLarge,
+    Pattern,
+}
+
+impl std::fmt::Display for OmitReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OmitReason::Binary => write!(f, "binary"),
+            OmitReason::TooLarge => write!(f, "too-large"),
+            OmitReason::Pattern => write!(f, "pattern"),
+        }
+    }
+}
 
 /// メインの走査関数
 pub fn run(
@@ -25,176 +45,52 @@ pub fn run(
 ) -> Result<(), String> {
     let mut counter = ProcessCounter::new();
 
-    // 出力ファイルを開く
-    let mut outfile = File::create(output_file).map_err(|e| {
-        format!(
-            "出力ファイルを作成できません: {} - {}",
-            output_file.display(),
-            e
-        )
-    })?;
-
-    // globsetの構築
+    // globset 準備
     let exclude_globset = build_globset(&config.exclude_patterns);
     let skip_globset = build_globset(&config.skip_content_patterns);
-
-    // include patterns
-    // 空の場合はNoneを返すので、空の場合は全ファイルを含める
     let include_globset = if config.include_patterns.is_empty() {
         None
     } else {
         build_globset(&config.include_patterns)
     };
 
-    // ディレクトリツリーの出力
-    let mut entries = collect_entries(target_dir, &exclude_globset, false);
-    entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
-
-    writeln!(outfile, "```").ok();
-    for entry in entries {
-        let path = entry.path();
-        let rel = match path.strip_prefix(target_dir) {
-            Ok(r) => r,
-            Err(_) => path,
-        };
-        let rel_str = rel.to_string_lossy().to_string();
-
-        // exclude
-        if let Some(gs) = &exclude_globset {
-            if gs.is_match(Path::new(&*rel_str)) {
-                continue;
-            }
-        }
-
-        // include patterns - ディレクトリツリーにも適用
-        if let Some(gs) = &include_globset {
-            // ディレクトリの場合は、その配下に含まれるファイルが[include]パターンに
-            // マッチするかどうかを確認する必要がある
-            if path.is_dir() {
-                // ディレクトリそのもののパスがマッチするかチェック
-                let dir_matches = gs.is_match(Path::new(&*rel_str));
-
-                // ディレクトリ配下のファイルがマッチするかチェック
-                // 例: dir/が含まれていなくても、dir/file.pyがマッチする場合はdirを表示
-                let dir_with_wildcard = if rel_str.ends_with('/') {
-                    format!("{}**", rel_str)
-                } else {
-                    format!("{}//**", rel_str)
-                };
-
-                let children_match = gs.is_match(Path::new(&dir_with_wildcard));
-
-                // 親フォルダチェック: このディレクトリの下に含まれるファイルが
-                // includeパターンにマッチするかどうかを確認
-                let mut has_matching_children = dir_matches || children_match;
-
-                if !has_matching_children {
-                    // このディレクトリ配下の全ファイルをスキャンして、マッチするものがあるか確認
-                    let child_entries = collect_entries(path, &exclude_globset, true);
-                    for child_entry in child_entries {
-                        let child_path = child_entry.path();
-                        let child_rel = match child_path.strip_prefix(target_dir) {
-                            Ok(r) => r,
-                            Err(_) => child_path,
-                        };
-                        let child_rel_str = child_rel.to_string_lossy();
-                        if gs.is_match(Path::new(&*child_rel_str)) {
-                            has_matching_children = true;
-                            break;
-                        }
-                    }
-                }
-
-                if !has_matching_children {
-                    continue;
-                }
-            } else if !gs.is_match(Path::new(&*rel_str)) {
-                // ファイルの場合は単純にパターンマッチ
-                continue;
-            }
-        }
-
-        if path.is_dir() {
-            let level = rel.components().count();
-            let indent = "    ".repeat(level.saturating_sub(1));
-            let name = path
-                .file_name()
-                .map(|s| s.to_string_lossy())
-                .unwrap_or_default();
-            writeln!(outfile, "{}{}/", indent, name).ok();
-        } else {
-            let level = rel.components().count();
-            let indent = "    ".repeat(level.saturating_sub(1));
-            let name = path
-                .file_name()
-                .map(|s| s.to_string_lossy())
-                .unwrap_or_default();
-            writeln!(outfile, "{}{}", indent, name).ok();
-        }
-    }
-    writeln!(outfile, "```").ok();
-    writeln!(outfile).ok();
-
-    // ファイル内容の出力
+    // ------------------------------------------------------------
+    // 1st pass – すべてのファイルを調べて “省略理由” をマッピング
+    // ------------------------------------------------------------
     let mut file_entries = collect_entries(target_dir, &exclude_globset, true);
-
     file_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
-
     let total_files = file_entries.len();
     counter.set_total_files(total_files);
 
-    for (idx, entry) in file_entries.iter().enumerate() {
+    let mut omitted: HashMap<PathBuf, OmitReason> = HashMap::new();
+
+    for entry in &file_entries {
         let path = entry.path();
         let rel = match path.strip_prefix(target_dir) {
-            Ok(r) => r,
-            Err(_) => path,
+            Ok(r) => r.to_path_buf(),
+            Err(_) => path.to_path_buf(),
         };
-        let rel_str = rel.to_string_lossy();
 
-        // exclude
-        if let Some(gs) = &exclude_globset {
-            if gs.is_match(Path::new(&*rel_str)) {
-                counter.increment_skipped_pattern();
-                continue;
-            }
-        }
-
-        // include patterns
+        // include フィルタ
         if let Some(gs) = &include_globset {
-            if !gs.is_match(Path::new(&*rel_str)) {
-                counter.increment_skipped_extension();
+            if !gs.is_match(&rel) {
+                // include にマッチしない → 完全除外
+                omitted.insert(rel, OmitReason::Pattern);
                 continue;
             }
         }
 
-        eprintln!(
-            "({}/{}) Processing: {}",
-            idx + 1,
-            total_files,
-            path.display()
-        );
-
-        // skip pattern
+        // skip パターン
         if let Some(gs) = &skip_globset {
-            if gs.is_match(Path::new(&*rel_str)) {
-                writeln!(outfile, "### {}", rel_str).ok();
-                writeln!(outfile, "```").ok();
-                writeln!(outfile, "(略)").ok();
-                writeln!(outfile, "```").ok();
-                writeln!(outfile).ok();
-                counter.increment_processed();
+            if gs.is_match(&rel) {
+                omitted.insert(rel, OmitReason::Pattern);
                 continue;
             }
         }
 
-        // バイナリチェック
+        // バイナリ判定
         if config.skip_binary && is_binary_file(path) {
-            writeln!(outfile, "### {}", rel_str).ok();
-            writeln!(outfile, "```").ok();
-            writeln!(outfile, "(略) バイナリファイル").ok();
-            writeln!(outfile, "```").ok();
-            writeln!(outfile).ok();
-            counter.increment_skipped_binary();
+            omitted.insert(rel, OmitReason::Binary);
             continue;
         }
 
@@ -202,18 +98,84 @@ pub fn run(
         if let Some(max_size) = config.max_file_size {
             if let Ok(meta) = fs::metadata(path) {
                 if meta.len() > max_size {
-                    writeln!(outfile, "### {}", rel_str).ok();
-                    writeln!(outfile, "```").ok();
-                    writeln!(outfile, "(略)").ok();
-                    writeln!(outfile, "```").ok();
-                    writeln!(outfile).ok();
-                    counter.increment_skipped_size();
+                    omitted.insert(rel, OmitReason::TooLarge);
                     continue;
                 }
             }
         }
+    }
 
-        // ファイル内容を出力
+    // ------------------------------------------------------------
+    // 2nd pass – ツリー出力
+    // ------------------------------------------------------------
+    let mut tree_entries = walker::collect_entries(target_dir, &exclude_globset, false);
+    tree_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
+
+    let mut outfile = File::create(output_file).map_err(|e| {
+        format!(
+            "出力ファイルを作成できません: {} - {}",
+            output_file.display(), e
+        )
+    })?;
+
+    writeln!(outfile, "```").ok();
+    for entry in &tree_entries {
+        let path = entry.path();
+        let rel = match path.strip_prefix(target_dir) {
+            Ok(r) => r.to_path_buf(),
+            Err(_) => path.to_path_buf(),
+        };
+        let rel_str = rel.to_string_lossy();
+
+        // exclude ディレクトリは collect_entries で落ちている
+        let indent = "    ".repeat(rel.components().count().saturating_sub(1));
+        let name = path
+            .file_name()
+            .map(|s| s.to_string_lossy())
+            .unwrap_or_else(|| rel_str.clone());
+
+        if let Some(reason) = omitted.get(&rel) {
+            writeln!(outfile, "{}{}   [omitted:{}]", indent, name, reason).ok();
+        } else {
+            if path.is_dir() {
+                writeln!(outfile, "{}{}/", indent, name).ok();
+            } else {
+                writeln!(outfile, "{}{}", indent, name).ok();
+            }
+        }
+    }
+    writeln!(outfile, "```").ok();
+    writeln!(outfile).ok();
+
+    // ------------------------------------------------------------
+    // 3rd pass – ファイル内容出力（omitted 以外）
+    // ------------------------------------------------------------
+    for (idx, entry) in file_entries.iter().enumerate() {
+        let path = entry.path();
+        let rel = match path.strip_prefix(target_dir) {
+            Ok(r) => r.to_path_buf(),
+            Err(_) => path.to_path_buf(),
+        };
+        let rel_str = rel.to_string_lossy();
+
+        // 省略対象なら本文を書かずにスキップ
+        if let Some(reason) = omitted.get(&rel) {
+            match reason {
+                OmitReason::Pattern => counter.increment_skipped_pattern(),
+                OmitReason::Binary => counter.increment_skipped_binary(),
+                OmitReason::TooLarge => counter.increment_skipped_size(),
+            }
+            continue;
+        }
+
+        // include されるファイルのみ本文出力
+        eprintln!(
+            "({}/{}) Processing: {}",
+            idx + 1,
+            total_files,
+            path.display()
+        );
+
         writeln!(outfile, "### {}", rel_str).ok();
         writeln!(outfile, "```").ok();
 
@@ -221,6 +183,7 @@ pub fn run(
             Ok(f) => f,
             Err(e) => {
                 writeln!(outfile, "Error: {}", e).ok();
+                writeln!(outfile, "```").ok();
                 writeln!(outfile).ok();
                 counter.increment_processed();
                 continue;
@@ -252,7 +215,9 @@ pub fn run(
         counter.increment_processed();
     }
 
-    // 処理サマリーの表示
+    // ------------------------------------------------------------
+    // summary
+    // ------------------------------------------------------------
     counter.print_summary();
 
     Ok(())

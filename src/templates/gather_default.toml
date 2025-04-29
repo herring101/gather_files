@@ -10,12 +10,13 @@ first_run_completed = no
 max_files_per_dir   = 100
 max_auto_file_size  = 1000000   # 1 MB
 
-[exclude]           # 除外パターン
+[exclude]           # 完全に除外するパス／パターン
 gather/
 .gather
 
-[skip]              # 内容だけスキップ
-*.pdf
+[skip]              # 本文を省略しツリーにのみ残すパターン
+*.pdf               # → 例: foo.pdf   [omitted:pattern]
 
-[include]           # 必ず含めたいパターン
-# (空ならすべて含む)
+[include]           # 必ず含めたいパターン (空なら全ファイル)
+# *.rs
+# src/**/*.py
