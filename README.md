@@ -1,26 +1,21 @@
 # gather_files
 
-gather_files は、プロジェクトのソースコードを LLM（Large Language Model）に理解させやすい形式で収集するツールです。  
-**CLI コマンドは v0.3 から `gather` に変更されました。**  
-**v0.3.1 以降では “本文を省略したファイル” をツリー上に `[omitted:<reason>]` と表記し、ファイル内容は出力されません。**
+_gather_files_ は、プロジェクトのソースコードを **LLM（Large Language Model）** に理解させやすい形で収集・整形する CLI ツールです。
+
+> v0.3 からコマンド名は **`gather`** にリネームされました。
+>
+> **v0.4.0‑alpha 以降** では **アウトライン抽出モード**(`--mode outline`) を新たに搭載しています。
 
 ---
 
-## 目的と特徴
+## 特徴
 
-- **LLM との効率的な対話**
-  - プロジェクト全体を一度に LLM に理解させることができます
-  - 必要なファイルを適切な順序で収集し、フォーマットします
-  - **v0.3.1**: 省略したファイルはツリーに `[omitted:binary]` などと明示
-- **賢い収集と除外**
-  - `.gitignore` と統合して不要ファイルを自動除外
-  - カスタマイズ可能な除外 / 省略パターン
-  - バイナリや巨大ファイルを自動スキップし、ツリーに注釈
-- **使いやすさを重視**
-  - シンプルなコマンドですぐに使い始められます
-  - **自己アップデート (`self-update`)** で常に最新版を利用
-  - 初回実行時にはインテリジェントな設定ガイドを表示
-  - VS Code との統合を予定
+| 機能カテゴリ                          | 概要                                                                                                                                                             |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ファイル収集 (gather モード)**      | `.gitignore` & 独自設定 `.gather` を組み合わせ、必要ファイルだけを再帰的に収集・整形します。スキップされたファイルはツリー上に `[omitted:<reason>]` として注釈。 |
+| **アウトライン抽出 (outline モード)** | **NEW!** Rust ファイル (`.rs`) から公開シンボル (`pub struct` / `fn` など) を抽出し、Markdown または JSON で一覧を生成します。今後多言語対応予定。               |
+| **自己アップデート**                  | `gather self-update` で GitHub Releases から最新バイナリをダウンロードし実行ファイルを置換。                                                                     |
+| **インストールスクリプト**            | macOS / Linux / Windows 用のワンライナーを同梱。                                                                                                                 |
 
 ---
 
@@ -32,99 +27,75 @@ gather_files は、プロジェクトのソースコードを LLM（Large Langua
 cargo install --git https://github.com/herring101/gather_files --bin gather --force
 ```
 
-> **すでにインストール済みの場合**
->
-> - バージョンを固定しない（`--tag` を付けない）
-> - `--force` を付与する  
->   だけで再ビルドされ最新版が導入されます。  
->   **もっと簡単に**: 後述の `gather self-update` を推奨します。
-
 ### スクリプトでインストール
 
-#### Windows
-
-```powershell
-irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 | iex
-```
-
-#### macOS / Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/herring101/gather_files/main/install.sh | sh
-```
-
-> スクリプトは GitHub Releases の **最新タグ** を取得し、既存バイナリを置き換えます。  
-> 再実行するだけでアップデートになります。
-
-### アップデートだけしたい場合
-
-```bash
-gather self-update
-```
+- **Windows**
+  ```powershell
+  irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 | iex
+  ```
+- **macOS / Linux**
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/herring101/gather_files/main/install.sh | sh
+  ```
 
 ---
 
-## 基本的な使い方
+## クイックスタート
 
-### クイックスタート
+### 1) プロジェクトを丸ごと収集
 
 ```bash
-# カレントディレクトリのコードを収集
+# gather モード（既定）
 gather .
-
-# 特定ディレクトリのコードを収集
-gather /path/to/project
 ```
 
-### 出力フォーマット概要
+### 2) Rust 公開シンボルのアウトラインだけ欲しい
 
-```text
-project-root/
-    src/
-        main.rs
-        utils.rs
-    target/                  [omitted:known-large-dir]
-    binary/logo.png          [omitted:binary]
-    README.md
+```bash
+# outline モード（Markdown 出力）
+gather --mode outline .
+
+# JSON 形式で出力したい場合
+gather --mode outline --outline-format json .
 ```
 
-- `[...]` が付いた行は **ツリーにだけ現れ、本文ブロックは出力されません**。
-- `<reason>` には `binary` / `too-large` / `pattern` などが入ります。
-
-### コマンド
-
-| コマンド                 | 説明                       |
-| ------------------------ | -------------------------- |
-| `gather <DIR> [OPTIONS]` | 指定ディレクトリを収集     |
-| `gather self-update`     | 実行バイナリを最新版へ更新 |
-
-### コマンドラインオプション
-
-| オプション         | 短縮形 | 説明                                     | デフォルト値      |
-| ------------------ | ------ | ---------------------------------------- | ----------------- |
-| --output           | -o     | 出力ファイルのパス                       | gather/output.txt |
-| --config-file      | -c     | 設定ファイルのパス                       | .gather           |
-| --max-lines        | -m     | 各ファイルから読み込む最大行数           | 1000              |
-| --max-file-size    | なし   | スキップするファイルサイズ閾値（バイト） | なし              |
-| --patterns         | -p     | 追加の除外パターン（複数指定可）         | なし              |
-| --skip-patterns    | -s     | 追加の内容スキップパターン（複数指定可） | なし              |
-| --include-patterns | -i     | 含めるファイルパターン（複数指定可）     | なし              |
-| --use-gitignore    | なし   | `.gitignore` の内容を `[exclude]` に統合 | false             |
-| --timestamp        | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
-| --no-open          | なし   | VS Code での自動オープンを無効化         | false             |
-
-> `self-update` はサブコマンドなのでオプションではありません。
+生成されたファイルは `gather/output.txt`（または `output_<timestamp>.txt`）に保存され、
+`code` コマンドが存在すれば VS Code で自動的に開きます。
 
 ---
 
-## アップデート運用例
+## コマンドラインオプション（抜粋）
 
-```bash
-# 作業前に最新版を取得
-gather self-update
+| オプション               | 短縮形 | モード  | 説明                              | 既定値              |
+| ------------------------ | ------ | ------- | --------------------------------- | ------------------- |
+| `--mode <MODE>`          | なし   | 共通    | `gather` / `outline` を切替       | `gather`            |
+| `--outline-format <FMT>` | なし   | outline | `md` / `json` を選択              | `md`                |
+| `--output <FILE>`        | `-o`   | gather  | 出力ファイルパス                  | `gather/output.txt` |
+| `--max-lines <N>`        | `-m`   | gather  | 各ファイル読み込み上限行          | 1000                |
+| `--use-gitignore`        | なし   | gather  | `.gitignore` を除外パターンに統合 | false               |
 
-# Cargo からアップデートする場合
-cargo install --git https://github.com/herring101/gather_files --bin gather --force
+> そのほかのフラグは `gather --help` を参照してください。
+
+---
+
+## アウトライン出力例（Markdown）
+
+```markdown
+### src/lib.rs
+
+- **mod** scanner
+- **struct** GatherOptions
+- **fn** gather
+
+### src/main.rs
+
+- **fn** main
+```
+
+JSON 形式を選んだ場合はファイルごとにオブジェクトが 1 行ずつ並びます。
+
+```json
+{"file":"src/lib.rs","symbols":[{"kind":"mod","ident":"scanner"}, ...]}
 ```
 
 ---
@@ -174,30 +145,26 @@ src/**/*.py
 
 ---
 
-## 開発ロードマップ
-
-今後の計画は **[`docs/ROADMAP.md`](./docs/ROADMAP.md)** にまとめています。  
-新機能の提案やアイデアはぜひ Issue / Discussion でお寄せください。
-
----
-
-## コントリビュート
-
-詳細な貢献方法は **[`CONTRIBUTING.md`](./CONTRIBUTING.md)** を参照してください。
-
----
-
 ## 変更履歴
 
-最新版の変更点は **[`CHANGELOG.md`](./CHANGELOG.md)** を確認してください。
+最新版の変更点は **[`CHANGELOG.md`](./CHANGELOG.md)** を参照してください。
+
+---
+
+## 今後のロードマップ
+
+- outline プラグインの多言語対応 (Python / Markdown / TS)
+- 依存グラフ出力 (`--mode graph` 予定)
+- VS Code 拡張プレビュー
+
+詳細は **[`docs/ROADMAP.md`](./docs/ROADMAP.md)** をご覧ください。
 
 ---
 
 ## 作者
 
-**herring101**
-
-- GitHub: [@herring101](https://github.com/herring101)
-- Twitter / X: [@herring101](https://twitter.com/herring101426)
+**herring101**  
+GitHub: <https://github.com/herring101>
+Twitter: <https://twitter.com/herring101>
 
 ツールに関するご意見・フィードバックをお待ちしています！

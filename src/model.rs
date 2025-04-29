@@ -5,7 +5,20 @@ use std::path::PathBuf;
 /* ---------- CLI -> Core options ---------- */
 
 #[derive(Debug)]
+pub enum RunMode {
+    Gather,
+    Outline(OutlineFormat),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum OutlineFormat {
+    Md,
+    Json,
+}
+
+#[derive(Debug)]
 pub struct CLIOptions {
+    pub mode: RunMode, // ←追加
     pub target_dir: PathBuf,
     pub output_file: Option<PathBuf>,
     pub config_file: Option<PathBuf>,
@@ -19,7 +32,7 @@ pub struct CLIOptions {
     pub use_gitignore: bool,
 }
 
-/* ---------- Effective config after merge ---------- */
+/* ---------- Effective gather-mode config ---------- */
 
 #[derive(Debug)]
 pub struct ConfigParams {
