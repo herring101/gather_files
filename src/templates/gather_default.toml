@@ -9,14 +9,18 @@ use_gitignore     = no
 first_run_completed = no
 max_files_per_dir   = 100
 max_auto_file_size  = 1000000   # 1 MB
+open_output       = yes
+use_gitignore     = no
 
-[exclude]           # 完全に除外するパス／パターン
+[exclude]
 gather/
 .gather
 
-[skip]              # 本文を省略しツリーにのみ残すパターン
-*.pdf               # → 例: foo.pdf   [omitted:pattern]
+[skip]
+*.pdf
 
-[include]           # 必ず含めたいパターン (空なら全ファイル)
+[outline]                # ←★ 追加セクション
+# *.rs                   # 例: Rust ファイルは本文をアウトラインに置換
+
+[include]
 # *.rs
-# src/**/*.py

@@ -10,6 +10,34 @@
 
 ---
 
+## [v0.5.0] – 2025-05-xx
+
+### ✨ Added
+
+- **[outline] セクション**  
+  `.gather` でファイルパターンを指定すると、  
+  “本文” の代わりにアウトラインだけを出力可能になりました。
+- **優先度統一**  
+  `exclude` → `skip` → `outline` → full の明確な 4 段階。
+
+### ♻️ Changed
+
+- `ConfigParams` に `outline_patterns` を追加
+- `scanner` 3-pass に `OmitReason::Outline` を実装
+- OutlineProvider を registry 化（多言語拡張ポイント）。
+
+### ✅ Tests
+
+- `tests/outline_section.rs`, `tests/precedence.rs` を追加し  
+  80 %+ カバレッジを維持。
+
+### ⚠️ Migration
+
+- 旧 `.gather` ファイルはそのまま動作。  
+  アウトラインを使いたい場合は `[outline]` を追記してください。
+
+---
+
 ## [v0.4.0] – 2025-04-30
 
 ### ✨ Added
