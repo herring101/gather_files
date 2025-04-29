@@ -1,4 +1,4 @@
-// src/scanner/counter.rs – v0.3.1-fix
+// src/scanner/counter.rs – v0.3.2
 
 #[derive(Debug, Default)]
 pub struct ProcessCounter {
@@ -58,5 +58,35 @@ impl ProcessCounter {
                 eprintln!("  - Size limit exceeded: {} files", self.skipped_size);
             }
         }
+    }
+}
+
+/* --------------------------------------------------------------------
+   unit tests
+-------------------------------------------------------------------- */
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn counts_increment_and_summary_do_not_panic() {
+        let mut c = ProcessCounter::new();
+        c.set_total_files(4);
+
+        // 1 processed + 各スキップ 1 ずつ
+        c.increment_processed();
+        c.increment_skipped_pattern();
+        c.increment_skipped_binary();
+        c.increment_skipped_size();
+
+        // 値が正しく加算されるか
+        assert_eq!(c.total_files, 4);
+        assert_eq!(c.processed_files, 1);
+        assert_eq!(c.skipped_by_pattern, 1);
+        assert_eq!(c.skipped_binary, 1);
+        assert_eq!(c.skipped_size, 1);
+
+        // print_summary が panic しないことだけ確認
+        c.print_summary();
     }
 }

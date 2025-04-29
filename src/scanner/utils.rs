@@ -1,11 +1,9 @@
 // src/scanner/utils.rs
 
-//! Utility helpers: binary‑file detection and glob‑pattern normalisation.
-
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::{fs::File, io::Read, path::Path};
 
-/// Quick heuristic to decide whether a file is binary.
+/// Simple binary-file heuristic
 pub fn is_binary_file(path: &Path) -> bool {
     const SAMPLE: usize = 1024;
     const NON_TEXT_THRESHOLD: f32 = 0.125;
@@ -22,7 +20,6 @@ pub fn is_binary_file(path: &Path) -> bool {
     if n == 0 {
         return false;
     }
-
     let non_text = buf[..n]
         .iter()
         .filter(|&&b| b == 0 || (b < 0x09 && b != b'\n' && b != b'\r') || b == 0x7F)
@@ -30,12 +27,7 @@ pub fn is_binary_file(path: &Path) -> bool {
     (non_text as f32) / (n as f32) > NON_TEXT_THRESHOLD
 }
 
-/// Build a [`GlobSet`] from user‑supplied glob patterns.
-///
-/// Normalisation rules:
-/// * `dir/`   ⇒ `**/dir`, `**/dir/**`, `dir/**`
-/// * `.rs`    ⇒ `**/*.rs`
-/// * `foo.md` ⇒ `**/foo.md`
+/// Build a GlobSet from user patterns
 pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
     if patterns.is_empty() {
         return None;
@@ -44,26 +36,25 @@ pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
     let mut builder = GlobSetBuilder::new();
     let mut add = |pat: &str| match Glob::new(pat) {
         Ok(g) => {
-            builder.add(g);
+            builder.add(g); // unify return type to ()
         }
-        Err(e) => eprintln!("invalid glob '{}': {}", pat, e),
+        Err(e) => {
+            eprintln!("invalid glob '{}': {}", pat, e);
+        }
     };
 
     for raw in patterns {
         if raw.ends_with('/') {
             let dir = raw.trim_end_matches('/');
-            // directory itself at any depth
-            add(&format!("**/{}", dir));
-            // anything under that directory at any depth
-            add(&format!("**/{}/**", dir));
-            // top‑level convenience (backward compat)
-            add(&format!("{}/**", dir));
+            add(&format!("**/{dir}"));
+            add(&format!("**/{dir}/**"));
+            add(&format!("{dir}/**"));
         } else if raw.starts_with('.') && !raw.contains('/') && !raw.contains('*') {
-            // extension only
-            add(&format!("**/*{}", raw));
+            add(&format!("**/*{raw}"));
         } else if !raw.contains('/') && !raw.contains('*') {
-            // plain filename
-            add(&format!("**/{}", raw));
+            add(&format!("**/{raw}"));
+            add(&format!("**/{raw}/**"));
+            add(&format!("{raw}/**"));
         } else {
             add(raw);
         }
@@ -72,9 +63,6 @@ pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
     builder.build().ok()
 }
 
-// ---------------------------------------------------------------------
-// tests
-// ---------------------------------------------------------------------
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,7 +72,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_pattern_covers_all_cases() {
+    fn dir_pattern() {
         let g = gs(&["gather/"]);
         assert!(g.is_match(Path::new("gather")));
         assert!(g.is_match(Path::new("gather/output.txt")));
@@ -93,16 +81,23 @@ mod tests {
     }
 
     #[test]
-    fn ext_pattern_matches_any_depth() {
+    fn ext_pattern() {
         let g = gs(&[".rs"]);
         assert!(g.is_match(Path::new("src/main.rs")));
         assert!(g.is_match(Path::new("deep/lib.rs")));
     }
 
     #[test]
-    fn filename_pattern_matches() {
+    fn filename_pattern() {
         let g = gs(&["Cargo.toml"]);
         assert!(g.is_match(Path::new("Cargo.toml")));
         assert!(g.is_match(Path::new("nested/Cargo.toml")));
+    }
+
+    #[test]
+    fn plain_name_dir() {
+        let g = gs(&["node_modules"]);
+        assert!(g.is_match(Path::new("node_modules/foo.js")));
+        assert!(g.is_match(Path::new("a/b/node_modules/foo.js")));
     }
 }

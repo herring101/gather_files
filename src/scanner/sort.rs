@@ -1,4 +1,4 @@
-// src/scanner/sort.rs
+// src/scanner/sort.rs – v0.3.2
 
 use std::path::Path;
 use walkdir::DirEntry;
@@ -94,4 +94,28 @@ pub fn compare_dir_entry(a: &DirEntry, b: &DirEntry, target_dir: &Path) -> std::
     let sa = path_string_for_sort(a, target_dir);
     let sb = path_string_for_sort(b, target_dir);
     natural_compare(&sa, &sb)
+}
+
+/* --------------------------------------------------------------------
+   unit tests
+-------------------------------------------------------------------- */
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn natural_compare_orders_numbers_logically() {
+        // "file9" < "file10"
+        assert_eq!(natural_compare("file9", "file10"), std::cmp::Ordering::Less);
+        assert_eq!(
+            natural_compare("file10", "file9"),
+            std::cmp::Ordering::Greater
+        );
+
+        // ゼロ埋めがあっても同じ値なら Equal
+        assert_eq!(
+            natural_compare("file1", "file01"),
+            std::cmp::Ordering::Equal
+        );
+    }
 }

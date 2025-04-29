@@ -4,11 +4,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-/// Result of a large-directory scan.
-///
-/// *The fields other than `path` are currently only used for
-/// informational logging on the very first run, so they are allowed
-/// to remain unread without triggering warnings.*
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct DetectionResult {
@@ -57,7 +52,6 @@ pub fn detect_large_directories(
     max_files_per_dir: usize,
     max_file_size: u64,
 ) -> Vec<DetectionResult> {
-    // …既存実装そのまま…
     let mut results = Vec::new();
     let entries = match fs::read_dir(target_dir) {
         Ok(e) => e,
@@ -135,4 +129,57 @@ pub fn generate_exclude_patterns(results: &[DetectionResult], root: &Path) -> Ve
         }
     }
     v
+}
+
+/* --------------------------------------------------------------------
+   unit tests
+-------------------------------------------------------------------- */
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{self, File};
+    use std::io::Write;
+    use tempfile::tempdir;
+
+    #[test]
+    fn detects_known_large_directory() {
+        // temp dir /node_modules を作る
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        let nm = root.join("node_modules");
+        fs::create_dir(&nm).unwrap();
+        File::create(nm.join("lib.js")).unwrap();
+
+        let results = detect_large_directories(root, 100, 1_000_000);
+
+        // node_modules が検出され、理由が KnownDirectory
+        assert!(
+            results.iter().any(|r| {
+                r.path.ends_with("node_modules")
+                    && matches!(r.reason, DetectionReason::KnownDirectory)
+            }),
+            "node_modules should be detected as KnownDirectory"
+        );
+    }
+
+    #[test]
+    fn generate_exclude_patterns_returns_dir_slash() {
+        // dist/ が “サイズ超過” で検出されるよう閾値を低く
+        let dir = tempdir().unwrap();
+        let root = dir.path();
+        let dist = root.join("dist");
+        fs::create_dir(&dist).unwrap();
+
+        // dist/bin にダミーファイル (2 bytes)
+        let mut f = File::create(dist.join("bin")).unwrap();
+        f.write_all(&[0u8, 1u8]).unwrap();
+
+        let results = detect_large_directories(root, 1, 1); // 1byte を超えたら TooLarge
+        let patterns = generate_exclude_patterns(&results, root);
+
+        assert!(
+            patterns.contains(&"dist/".to_string()),
+            "exclude patterns should contain 'dist/'"
+        );
+    }
 }
