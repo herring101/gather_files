@@ -157,13 +157,9 @@ src/**/*.py
 
 将来計画は **[docs/ROADMAP.md`](./docs/ROADMAP.md)** に切り出しました。新機能の提案やアイデアはそちらを参照してください。
 
----
-
 ## コントリビュート
 
 貢献方法の詳細は **[CONTRIBUTING.md](./CONTRIBUTING.md)** をご覧ください。
-
----
 
 ## 変更履歴
 
