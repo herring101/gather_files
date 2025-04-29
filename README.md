@@ -19,28 +19,32 @@ gather_files は、プロジェクトのソースコードを LLM（Large Langua
 
 - **使いやすさを重視**
   - シンプルなコマンドで即座に利用開始
+  - **自己アップデート (`self-update`)** で常に最新機能を利用
   - 初回実行時のインテリジェントな設定ガイド
   - プロジェクトタイプに応じた設定テンプレート（近日実装予定）
   - VS Code との統合
 
 ## インストール
 
-### Cargo を使用したインストール
+### Cargo でインストール
 
 ```bash
-# GitHubから直接インストール
-cargo install --git https://github.com/herring101/gather_files
-
-# 特定のバージョンを指定してインストール
-cargo install --git https://github.com/herring101/gather_files --tag v0.2.0
+# 最新版をインストール / 既存インストールを強制上書き
+cargo install --git https://github.com/herring101/gather_files --force
 ```
 
-### スクリプトを使用したインストール
+> **すでにインストール済みの場合**
+>
+> - バージョンを固定しない (`--tag` を付けない)
+> - `--force` を付与する  
+>   ことで再ビルドされ最新版が導入されます。  
+>   **もっと簡単に**: 後述の `gather_files self-update` を推奨します。
+
+### スクリプトでインストール
 
 #### Windows
 
 ```powershell
-# PowerShell を管理者権限で実行
 irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 | iex
 ```
 
@@ -48,6 +52,15 @@ irm https://raw.githubusercontent.com/herring101/gather_files/main/install.ps1 |
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/herring101/gather_files/main/install.sh | sh
+```
+
+> スクリプトは毎回 GitHub Releases の **最新タグ** を取得し、既存バイナリを上書きします。  
+> したがって再実行するだけでアップデートにもなります。
+
+### アップデートだけしたい場合
+
+```bash
+gather_files self-update
 ```
 
 ## 基本的な使い方
@@ -61,6 +74,13 @@ gather_files .
 # 特定のディレクトリのコードを収集
 gather_files /path/to/project
 ```
+
+### コマンド
+
+| コマンド                       | 説明                       |
+| ------------------------------ | -------------------------- |
+| `gather_files <DIR> [OPTIONS]` | 指定ディレクトリを収集     |
+| `gather_files self-update`     | 実行ファイルを最新版へ更新 |
 
 ### コマンドラインオプション
 
@@ -77,146 +97,85 @@ gather_files /path/to/project
 | --timestamp        | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
 | --no-open          | なし   | VS Code での自動オープンを無効化         | false             |
 
-### 使用例
+（※ `self-update` はサブコマンド扱いなので、オプションではありません）
+
+## アップデートの運用例
 
 ```bash
-# 出力先を指定して最大行数を制限
-gather_files . -o output.txt --max-lines 500
+# プロジェクトで作業前に最新版へ
+gather_files self-update
 
-# .gitignoreを使用し、特定のパターンのみを含める
-gather_files . --use-gitignore -i "*.rs" -i "*.toml"
-
-# カスタム除外パターンを追加
-gather_files . -p "*.tmp" -p "build/"
+# もし Cargo インストールを使い続ける場合
+cargo install --git https://github.com/herring101/gather_files --force
 ```
 
 ## 設定ファイル (.gather)
 
-プロジェクトルートに`.gather`ファイルを配置することで、収集の設定をカスタマイズできます：
+プロジェクトルートに **`.gather`** ファイルを置くことで挙動を細かく制御できます。  
+初回実行時に自動生成されるテンプレートを編集するか、以下を参考にカスタマイズしてください。
 
-### 設定ファイルのオプション説明
+### セクション一覧
 
-#### [settings]セクション
-
-| 設定キー            | 説明                                       | デフォルト値 |
-| ------------------- | ------------------------------------------ | ------------ |
-| max_lines           | 各ファイルから読み込む最大行数             | 1000         |
-| max_file_size       | スキップするファイルサイズ閾値（バイト）   | なし         |
-| skip_binary         | バイナリファイルをスキップするか           | false        |
-| output_dir          | 出力先ディレクトリ                         | gather       |
-| use_timestamp       | 出力ファイル名にタイムスタンプを付与するか | false        |
-| use_gitignore       | .gitignore の内容を[exclude]に統合するか   | false        |
-| open_output         | VSCode で出力ファイルを自動で開くか        | true         |
-| first_run_completed | 初回実行設定プロセスが完了したか           | false        |
-| max_files_per_dir   | ディレクトリ内のファイル数閾値             | 100          |
-| max_auto_file_size  | 自動除外するファイルサイズ閾値（バイト）   | 1000000      |
-
-#### [exclude]セクション
-
-除外するファイルやディレクトリのパターンを指定します。
-ディレクトリの場合は末尾に`/`を付けることで、そのディレクトリ以下をすべて除外します。
+| セクション   | 役割                                   |
+| ------------ | -------------------------------------- |
+| `[settings]` | キー=値形式で一般設定を記述            |
+| `[exclude]`  | 収集対象から除外するパス／パターン     |
+| `[skip]`     | 内容をスキップしたいファイルのパターン |
+| `[include]`  | 収集対象に明示的に含めたいパターン     |
 
 ```ini
-[exclude]
-.git/          # .gitディレクトリ以下をすべて除外
-node_modules/  # node_modulesディレクトリ以下をすべて除外
-*.log         # すべてのlogファイルを除外
-temp_*        # temp_で始まるすべてのファイルを除外
+[settings]
+max_lines         = 1000     # 各ファイルの最大読み込み行
+max_file_size     = 500000   # スキップ閾値 (bytes)
+skip_binary       = yes
+output_dir        = gather
+use_timestamp     = no
+use_gitignore     = yes
+open_output       = yes
+
+[exclude]         # 除外パターン
+node_modules/
+*.log
+
+[skip]            # 内容だけスキップ
+*.min.js
+*.pdf
+
+[include]         # 必ず含めたいパターン
+*.rs
+src/**/*.py
 ```
 
-#### [skip]セクション
+> **パターン記法メモ**  
+> ・ディレクトリは末尾 `/` を付けると配下すべてを対象  
+> ・拡張子だけ指定すると `**/*.ext` に展開  
+> ・`**`, ワイルドカード, 中括弧展開など一般的な glob が使えます
 
-内容の出力をスキップするファイルパターンを指定します。
-マッチしたファイルは`(略)`として出力されます。
-
-```ini
-[skip]
-*.pdf       # PDFファイルの内容をスキップ
-*.min.js    # 圧縮済みJavaScriptファイルをスキップ
-```
-
-#### [include]セクション
-
-含めるファイルパターンを指定します。
-指定がない場合は、すべてのファイルが対象となります。
-
-```ini
-[include]
-*.rs         # すべてのRustファイル
-src/**/*.py   # srcディレクトリ以下のすべてのPythonファイル
-*.{js,ts}    # すべてのJavaScriptとTypeScriptファイル
-```
-
-### パターンの書き方
-
-ファイルパターンはグロブ形式で指定します：
-
-- `*` : 任意の文字列
-- `?` : 任意の 1 文字
-- `[abc]` : a, b, c のいずれかの 1 文字
-- `[!abc]` : a, b, c 以外の 1 文字
-
-例：
-
-- `*.txt` : すべての txt ファイル
-- `secret_*.log` : secret\_ で始まるすべての log ファイル
-- `logs/` : logs ディレクトリ以下をすべて
-- `src/**/*.rs` : src ディレクトリ以下のすべての Rust ファイル
-
-````
-
-## LLMとの使用例
-
-1. コードの収集
-```bash
-cd your-project
-gather .
-````
-
-2. 生成されたファイル（例：gather/output.txt）を LLM に送信
-
-3. プロジェクトの文脈を理解した LLM と対話
-   - バグ修正の提案
-   - リファクタリングの提案
-   - 新機能の実装方法の相談
-   - コードレビュー
+---
 
 ## 開発ロードマップ
 
-### 近日実装予定の機能
+将来計画は **[docs/ROADMAP.md`](./docs/ROADMAP.md)** に切り出しました。新機能の提案やアイデアはそちらを参照してください。
 
-- プロジェクトタイプの自動検出
-- 言語/フレームワーク別の最適化テンプレート
-- トークン数の最適化機能の強化
-- 差分モード（git diff ベース）
-- プリセット管理システム
-- 大規模ディレクトリ検出のさらなる最適化
-
-### 長期的な目標
-
-- LLM プロバイダーとの直接統合
-- IDE/エディタプラグイン
-- 依存関係グラフの生成
-- インタラクティブモード
-- プロジェクト分析レポート
+---
 
 ## コントリビュート
 
-プルリクエストや課題の報告を歓迎します。以下の分野で特に協力を求めています：
+貢献方法の詳細は **[CONTRIBUTING.md](./CONTRIBUTING.md)** をご覧ください。
 
-- 新しいプロジェクトテンプレートの追加
-- パフォーマンスの最適化
-- テストの追加
-- ドキュメントの改善
+---
 
-## ライセンス
+## 変更履歴
 
-MIT
+最新版の変更点は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
+
+---
 
 ## 作者
 
-@herring101
+**herring101**
 
-## 更新履歴
+- GitHub: [@herring101](https://github.com/herring101)
+- Twitter / X: [@herring101](https://twitter.com/herring101426)
 
-詳細な更新履歴は[CHANGELOG.md](./CHANGELOG.md)を参照してください。
+ツールに関するご意見・フィードバックをお待ちしています！

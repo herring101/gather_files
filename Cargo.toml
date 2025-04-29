@@ -1,22 +1,21 @@
 [package]
-name = "gather_files"
-version = "0.2.8"
-edition = "2021"
+name        = "gather_files"
+version     = "0.2.9"
+edition     = "2021"
 description = "Gather project files for LLM processing"
-authors = ["herring101"]
-license = "MIT"
-repository = "https://github.com/herring101/gather_files"
-readme = "README.md"
-keywords = ["llm", "files", "gather", "development"]
-categories = ["development-tools", "command-line-utilities"]
+authors     = ["herring101"]
+license     = "MIT"
+repository  = "https://github.com/herring101/gather_files"
+readme      = "README.md"
+keywords    = ["llm", "files", "gather", "development"]
+categories  = ["development-tools", "command-line-utilities"]
 
 [dependencies]
-chrono = "0.4.39"
+chrono  = "0.4.39"
 walkdir = "2.5.0"
 globset = "0.4.15"
-# Enable derive macros for clap so `#[derive(Parser)]` works
-clap = { version = "4.5.23", features = ["derive"] }
+clap    = { version = "4.5.23", features = ["derive"] }
+self_update = { version = "0.42", default-features = false, features = ["rustls"] }
 
 [dev-dependencies]
-# keep tempfile for unit tests
 tempfile = "3.14.0"

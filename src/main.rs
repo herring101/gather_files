@@ -3,6 +3,7 @@ mod config;
 mod gitignore;
 mod model;
 mod scanner;
+mod updater;
 
 use crate::args::parse_args;
 use crate::config::load_config_file;
@@ -16,10 +17,29 @@ use std::path::PathBuf;
 use std::process::{self, Command};
 
 fn main() {
-    // 1) CLIオプション取得
+    // ------------------------------------------------------------------
+    // 0) “self-update” サブコマンドの特判
+    // ------------------------------------------------------------------
+    {
+        // argv[0] はプログラム名なので skip
+        let mut iter = std::env::args().skip(1);
+        if let Some(cmd) = iter.next() {
+            if cmd == "self-update" || cmd == "update" {
+                if let Err(e) = updater::run() {
+                    eprintln!("Self-update failed: {e}");
+                    process::exit(1);
+                }
+                return; // 更新完了
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 1) CLI オプション取得
+    // ------------------------------------------------------------------
     let cli_opts = parse_args();
 
-    // 2) ターゲットディレクトリ存在チェック
+    // 以下、元の処理はそのまま ─────────────────────────────
     if !cli_opts.target_dir.is_dir() {
         eprintln!(
             "ディレクトリが存在しません: {}",

@@ -1,5 +1,30 @@
 # Changelog
 
+## [v0.2.9] - 2025-04-29
+
+### Added
+
+- **自己アップデート機能 (`self-update` サブコマンド)**
+  - `gather_files self-update` で GitHub Releases から最新バイナリを取得し、実行ファイルを自動置換
+  - Windows／macOS／Linux（musl ビルド含む）すべて対応
+  - これに合わせて `self_update` クレートを導入（`rustls` backend）
+
+### Changed
+
+- **ビルド依存の簡素化**
+  - `self_update` を `default-features = false, features = ["rustls"]` で使用し **OpenSSL 依存を完全排除**
+  - CI／クロスコンパイル環境での `openssl-sys` ビルドエラーが解消
+- **ドキュメント刷新**
+  - README に “アップデート方法” と `self-update` の説明を追加
+  - インストール手順を最新化 (`cargo install --force` の注意書きを追加)
+
+### Fixed
+
+- **バイナリ上書き時のパーミッション**
+  - Linux/macOS で `install.sh` が既存バイナリを上書きする際、`chmod +x` を再度実行して実行権を確保
+
+[v0.2.9]: https://github.com/herring101/gather_files/compare/v0.2.8...v0.2.9
+
 ## [v0.2.8] - 2025-04-29
 
 ### Fixed
