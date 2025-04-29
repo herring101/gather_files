@@ -1,6 +1,6 @@
 [package]
 name        = "gather_files"
-version     = "0.2.10"
+version     = "0.3.0"
 edition     = "2021"
 description = "Gather project files for LLM processing"
 authors     = ["herring101"]
@@ -28,5 +28,5 @@ name = "gather_files_lib"
 path = "src/lib.rs"
 
 [[bin]]
-name = "gather_files"
+name = "gather"
 path = "src/main.rs"

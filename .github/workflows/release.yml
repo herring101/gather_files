@@ -30,7 +30,6 @@ jobs:
             echo "Release already exists for tag ${{ github.ref_name }}"
             echo "release_exists=true" >> $GITHUB_OUTPUT
             echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
-            # Get upload URL for existing release
             UPLOAD_URL=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID" | \
               jq -r '.upload_url')
@@ -54,7 +53,6 @@ jobs:
 
   build:
     needs: create-release
-    # Run even if the create-release job skipped creating a new release
     if: always()
     name: Build and Release
     runs-on: ${{ matrix.os }}
@@ -63,28 +61,28 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: gather_files
-            asset_name: gather_files-linux-amd64
+            artifact_name: gather
+            asset_name: gather-linux-amd64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            artifact_name: gather_files
-            asset_name: gather_files-linux-musl-amd64
+            artifact_name: gather
+            asset_name: gather-linux-musl-amd64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: gather_files.exe
-            asset_name: gather_files-windows-amd64.exe
+            artifact_name: gather.exe
+            asset_name: gather-windows-amd64.exe
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: gather_files
-            asset_name: gather_files-macos-amd64
+            artifact_name: gather
+            asset_name: gather-macos-amd64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: gather_files
-            asset_name: gather_files-macos-arm64
+            artifact_name: gather
+            asset_name: gather-macos-arm64
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            artifact_name: gather_files
-            asset_name: gather_files-linux-arm64
+            artifact_name: gather
+            asset_name: gather-linux-arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -128,7 +126,6 @@ jobs:
 
   create-installers:
     needs: create-release
-    # Run even if the create-release job skipped creating a new release
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -136,124 +133,58 @@ jobs:
 
       - name: Generate install scripts
         run: |
-          # PowerShellスクリプトの生成
+          # ----- PowerShell (install.ps1) -----
           cat > install.ps1 << 'EOF'
           $ErrorActionPreference = 'Stop'
-
           $repo = "herring101/gather_files"
-          $file = "gather_files-windows-amd64.exe"
+          $file = "gather-windows-amd64.exe"
           $releases = "https://api.github.com/repos/$repo/releases"
-
           Write-Output "Fetching latest release..."
           $tag = (Invoke-WebRequest $releases | ConvertFrom-Json)[0].tag_name
-
           $download = "https://github.com/$repo/releases/download/$tag/$file"
-          $installDir = "$env:LocalAppData\Programs\gather_files"
-          $output = "$installDir\gather_files.exe"
-
-          if (-not (Test-Path $installDir)) {
-              New-Item -ItemType Directory -Path $installDir -Force | Out-Null
-          }
-
+          $installDir = "$env:LocalAppData\\Programs\\gather"
+          $output = "$installDir\\gather.exe"
+          if (-not (Test-Path $installDir)) { New-Item -ItemType Directory -Path $installDir -Force | Out-Null }
           Write-Output "Downloading $download..."
           Invoke-WebRequest $download -Out $output
-
           Write-Output "Installing to $output"
-
           $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
           if (-not $currentPath.Contains($installDir)) {
               Write-Output "Adding installation directory to system PATH..."
-              [Environment]::SetEnvironmentVariable(
-                  "Path",
-                  "$currentPath;$installDir",
-                  "Machine"
-              )
+              [Environment]::SetEnvironmentVariable("Path", "$currentPath;$installDir", "Machine")
               $env:Path = "$env:Path;$installDir"
-              Write-Output "PATH has been updated successfully."
           }
-
-          Write-Output "Installation completed!"
-          Write-Output "You can now run 'gather_files' from your terminal."
+          Write-Output "Installation completed!  Run 'gather' from any terminal."
           EOF
 
-          # シェルスクリプトの生成
+          # ----- Shell (install.sh) -----
           cat > install.sh << 'EOF'
           #!/bin/sh
-
           REPO="herring101/gather_files"
           RELEASES_URL="https://api.github.com/repos/$REPO/releases"
-
           case "$(uname -sm)" in
-              "Darwin x86_64")
-                  PLATFORM="macos"
-                  ARCH="amd64"
-                  FILE="gather_files-macos-amd64"
-                  ;;
-              "Darwin arm64")
-                  PLATFORM="macos"
-                  ARCH="arm64"
-                  FILE="gather_files-macos-arm64"
-                  ;;
-              "Linux x86_64")
-                  PLATFORM="linux"
-                  ARCH="amd64"
-                  FILE="gather_files-linux-musl-amd64"
-                  ;;
-              "Linux aarch64")
-                  PLATFORM="linux"
-                  ARCH="arm64"
-                  FILE="gather_files-linux-arm64"
-                  ;;
-              *)
-                  echo "Unsupported platform: $(uname -sm)"
-                  exit 1
-                  ;;
+              "Darwin x86_64")   FILE="gather-macos-amd64"   ;;
+              "Darwin arm64")    FILE="gather-macos-arm64"   ;;
+              "Linux x86_64")    FILE="gather-linux-musl-amd64" ;;
+              "Linux aarch64")   FILE="gather-linux-arm64"   ;;
+              *) echo "Unsupported platform: $(uname -sm)"; exit 1 ;;
           esac
-
-          echo "Detected platform: $PLATFORM-$ARCH"
-
-          if ! TAG=$(curl -fsSL $RELEASES_URL | grep -o '"tag_name": "[^"]*' | head -n 1 | cut -d'"' -f4); then
-              echo "Failed to fetch latest release information"
-              exit 1
-          fi
-
+          echo "Detected binary: $FILE"
+          TAG=$(curl -fsSL $RELEASES_URL | grep -o '"tag_name": "[^"]*' | head -n 1 | cut -d'"' -f4)
           DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$FILE"
           INSTALL_DIR="$HOME/.local/bin"
-
           mkdir -p "$INSTALL_DIR"
-
-          echo "Downloading gather_files..."
-          if curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/gather_files"; then
-              chmod +x "$INSTALL_DIR/gather_files"
-              
-              if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
-                  SHELL_CONFIG=""
-                  if [ -f "$HOME/.zshrc" ]; then
-                      SHELL_CONFIG="$HOME/.zshrc"
-                  elif [ -f "$HOME/.bashrc" ]; then
-                      SHELL_CONFIG="$HOME/.bashrc"
-                  fi
-                  
-                  if [ -n "$SHELL_CONFIG" ]; then
-                      echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$SHELL_CONFIG"
-                      echo "Added $INSTALL_DIR to PATH in $SHELL_CONFIG"
-                      echo "Please restart your terminal or run: source $SHELL_CONFIG"
-                  else
-                      echo "Please add $INSTALL_DIR to your PATH manually"
-                  fi
-              fi
-              
-              echo "Installation completed!"
-              echo "You can now run 'gather_files' from your terminal."
-          else
-              echo "Download failed"
-              exit 1
-          fi
+          echo "Downloading gather..."
+          curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/gather" && chmod +x "$INSTALL_DIR/gather"
+          case ":$PATH:" in
+              *":$INSTALL_DIR:"*) ;; # already in PATH
+              *) echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.profile";;
+          esac
+          echo "Installation completed!  Run 'gather' from any terminal."
           EOF
-
           chmod +x install.sh
 
-      - name: Upload Install Scripts
+      - name: Upload Install Script (PS)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
