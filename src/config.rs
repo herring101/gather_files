@@ -26,7 +26,9 @@ pub fn load_config_file(path: &Path) -> ConfigParams {
             }
         };
     }
-    map.insert("max_lines", |p, v| p.max_lines = v.parse().unwrap_or(p.max_lines));
+    map.insert("max_lines", |p, v| {
+        p.max_lines = v.parse().unwrap_or(p.max_lines)
+    });
     map.insert("max_file_size", |p, v| p.max_file_size = v.parse().ok());
     map.insert("skip_binary", set_bool!(skip_binary));
     map.insert("output_dir", |p, v| {
@@ -101,8 +103,8 @@ fn push_pattern(vec: &mut Vec<String>, line: &str) {
 }
 
 /* --------------------------------------------------------------------
-   unit tests
-   -------------------------------------------------------------------- */
+unit tests
+-------------------------------------------------------------------- */
 #[cfg(test)]
 mod tests {
     use super::*;

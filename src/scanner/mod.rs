@@ -1,4 +1,4 @@
-// src/scanner/mod.rs – v0.3.1
+// src/scanner/mod.rs – v0.3.1-fix
 
 mod counter;
 pub mod detector;
@@ -45,7 +45,7 @@ pub fn run(
 ) -> Result<(), String> {
     let mut counter = ProcessCounter::new();
 
-    // globset 準備
+    /* ---------- globset 構築 ---------- */
     let exclude_globset = build_globset(&config.exclude_patterns);
     let skip_globset = build_globset(&config.skip_content_patterns);
     let include_globset = if config.include_patterns.is_empty() {
@@ -54,33 +54,28 @@ pub fn run(
         build_globset(&config.include_patterns)
     };
 
-    // ------------------------------------------------------------
-    // 1st pass – すべてのファイルを調べて “省略理由” をマッピング
-    // ------------------------------------------------------------
+    /* ============================================================
+    1st pass – 省略判定マップを作成
+    ============================================================ */
     let mut file_entries = collect_entries(target_dir, &exclude_globset, true);
     file_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
-    let total_files = file_entries.len();
-    counter.set_total_files(total_files);
+    counter.set_total_files(file_entries.len());
 
     let mut omitted: HashMap<PathBuf, OmitReason> = HashMap::new();
 
     for entry in &file_entries {
         let path = entry.path();
-        let rel = match path.strip_prefix(target_dir) {
-            Ok(r) => r.to_path_buf(),
-            Err(_) => path.to_path_buf(),
-        };
+        let rel: PathBuf = path.strip_prefix(target_dir).unwrap_or(path).to_path_buf();
 
-        // include フィルタ
+        /* include フィルタ – マッチしないものは省略 */
         if let Some(gs) = &include_globset {
             if !gs.is_match(&rel) {
-                // include にマッチしない → 完全除外
                 omitted.insert(rel, OmitReason::Pattern);
                 continue;
             }
         }
 
-        // skip パターン
+        /* skip パターン */
         if let Some(gs) = &skip_globset {
             if gs.is_match(&rel) {
                 omitted.insert(rel, OmitReason::Pattern);
@@ -88,46 +83,41 @@ pub fn run(
             }
         }
 
-        // バイナリ判定
+        /* バイナリ検出 */
         if config.skip_binary && is_binary_file(path) {
             omitted.insert(rel, OmitReason::Binary);
             continue;
         }
 
-        // サイズ制限
-        if let Some(max_size) = config.max_file_size {
-            if let Ok(meta) = fs::metadata(path) {
-                if meta.len() > max_size {
+        /* サイズ制限 */
+        if let Some(max) = config.max_file_size {
+            if let Ok(m) = fs::metadata(path) {
+                if m.len() > max {
                     omitted.insert(rel, OmitReason::TooLarge);
-                    continue;
                 }
             }
         }
     }
 
-    // ------------------------------------------------------------
-    // 2nd pass – ツリー出力
-    // ------------------------------------------------------------
+    /* ============================================================
+    2nd pass – ディレクトリツリー出力
+    ============================================================ */
     let mut tree_entries = walker::collect_entries(target_dir, &exclude_globset, false);
     tree_entries.sort_by(|a, b| compare_dir_entry(a, b, target_dir));
 
     let mut outfile = File::create(output_file).map_err(|e| {
         format!(
             "出力ファイルを作成できません: {} - {}",
-            output_file.display(), e
+            output_file.display(),
+            e
         )
     })?;
 
     writeln!(outfile, "```").ok();
     for entry in &tree_entries {
         let path = entry.path();
-        let rel = match path.strip_prefix(target_dir) {
-            Ok(r) => r.to_path_buf(),
-            Err(_) => path.to_path_buf(),
-        };
+        let rel: PathBuf = path.strip_prefix(target_dir).unwrap_or(path).to_path_buf();
         let rel_str = rel.to_string_lossy();
-
-        // exclude ディレクトリは collect_entries で落ちている
         let indent = "    ".repeat(rel.components().count().saturating_sub(1));
         let name = path
             .file_name()
@@ -135,30 +125,25 @@ pub fn run(
             .unwrap_or_else(|| rel_str.clone());
 
         if let Some(reason) = omitted.get(&rel) {
-            writeln!(outfile, "{}{}   [omitted:{}]", indent, name, reason).ok();
+            writeln!(outfile, "{indent}{name}   [omitted:{reason}]").ok();
+        } else if path.is_dir() {
+            writeln!(outfile, "{indent}{name}/").ok();
         } else {
-            if path.is_dir() {
-                writeln!(outfile, "{}{}/", indent, name).ok();
-            } else {
-                writeln!(outfile, "{}{}", indent, name).ok();
-            }
+            writeln!(outfile, "{indent}{name}").ok();
         }
     }
     writeln!(outfile, "```").ok();
     writeln!(outfile).ok();
 
-    // ------------------------------------------------------------
-    // 3rd pass – ファイル内容出力（omitted 以外）
-    // ------------------------------------------------------------
+    /* ============================================================
+    3rd pass – ファイル内容出力（省略対象はスキップ）
+    ============================================================ */
     for (idx, entry) in file_entries.iter().enumerate() {
         let path = entry.path();
-        let rel = match path.strip_prefix(target_dir) {
-            Ok(r) => r.to_path_buf(),
-            Err(_) => path.to_path_buf(),
-        };
+        let rel: PathBuf = path.strip_prefix(target_dir).unwrap_or(path).to_path_buf();
         let rel_str = rel.to_string_lossy();
 
-        // 省略対象なら本文を書かずにスキップ
+        /* 省略対象ならカウンタだけ更新 */
         if let Some(reason) = omitted.get(&rel) {
             match reason {
                 OmitReason::Pattern => counter.increment_skipped_pattern(),
@@ -168,11 +153,11 @@ pub fn run(
             continue;
         }
 
-        // include されるファイルのみ本文出力
+        /* ---- 本文を出力 ---- */
         eprintln!(
             "({}/{}) Processing: {}",
             idx + 1,
-            total_files,
+            file_entries.len(),
             path.display()
         );
 
@@ -191,17 +176,17 @@ pub fn run(
         };
         let reader = BufReader::new(file);
 
-        let mut line_count = 0;
-        for line_result in reader.lines() {
-            match line_result {
-                Ok(line) => {
-                    if line_count >= config.max_lines {
+        let mut lines = 0;
+        for line in reader.lines() {
+            match line {
+                Ok(l) => {
+                    if lines >= config.max_lines {
                         writeln!(outfile, "...").ok();
                         writeln!(outfile, "(省略)").ok();
                         break;
                     }
-                    writeln!(outfile, "{}", line).ok();
-                    line_count += 1;
+                    writeln!(outfile, "{l}").ok();
+                    lines += 1;
                 }
                 Err(e) => {
                     writeln!(outfile, "Error reading line: {}", e).ok();
@@ -215,10 +200,9 @@ pub fn run(
         counter.increment_processed();
     }
 
-    // ------------------------------------------------------------
-    // summary
-    // ------------------------------------------------------------
+    /* ============================================================
+    summary
+    ============================================================ */
     counter.print_summary();
-
     Ok(())
 }

@@ -1,4 +1,4 @@
-// src/scanner/counter.rs
+// src/scanner/counter.rs – v0.3.1-fix
 
 #[derive(Debug, Default)]
 pub struct ProcessCounter {
@@ -7,7 +7,6 @@ pub struct ProcessCounter {
     skipped_by_pattern: usize,
     skipped_binary: usize,
     skipped_size: usize,
-    skipped_extension: usize,
 }
 
 impl ProcessCounter {
@@ -35,15 +34,8 @@ impl ProcessCounter {
         self.skipped_size += 1;
     }
 
-    pub fn increment_skipped_extension(&mut self) {
-        self.skipped_extension += 1;
-    }
-
     pub fn print_summary(&self) {
-        let total_skipped = self.skipped_by_pattern
-            + self.skipped_binary
-            + self.skipped_size
-            + self.skipped_extension;
+        let total_skipped = self.skipped_by_pattern + self.skipped_binary + self.skipped_size;
 
         eprintln!("\nProcessing summary:");
         eprintln!(
@@ -64,12 +56,6 @@ impl ProcessCounter {
             }
             if self.skipped_size > 0 {
                 eprintln!("  - Size limit exceeded: {} files", self.skipped_size);
-            }
-            if self.skipped_extension > 0 {
-                eprintln!(
-                    "  - Not matching patterns: {} files",
-                    self.skipped_extension
-                );
             }
         }
     }
