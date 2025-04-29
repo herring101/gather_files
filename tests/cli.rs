@@ -1,49 +1,39 @@
-//! Integration test – end-to-end flow of `gather`.
+//! Integration test – end-to-end flow of `gather` (v0.3.1)
 
 use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 use tempfile::tempdir;
 
+/// 1. `.gather` が自動生成される  
+/// 2. そのままスキャンが完走して exit-code 0  
+/// 3. gather/output.txt が作成される
 #[test]
-fn first_run_creates_gather_then_success_on_second_run() {
-    /* --- create a minimal sample project in a temp dir --- */
+fn first_run_creates_gather_and_succeeds() {
+    /* --- temp プロジェクト作成 --- */
     let tmp = tempdir().unwrap();
     let root = tmp.path();
 
-    // mimic a tiny Rust project
     fs::create_dir_all(root.join("src")).unwrap();
-    fs::write(root.join("src").join("main.rs"), "fn main() {}").unwrap();
+    fs::write(root.join("src/main.rs"), "fn main() {}").unwrap();
 
-    /* --- 1st run: should create .gather and exit with non-zero --- */
-    Command::cargo_bin("gather")
-        .unwrap()
-        .current_dir(root) // run inside temp dir for cleaner paths
-        .arg(".") // scan current directory
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains(".gather を生成しました"));
-
-    /* mark first_run_completed = yes so 2nd run succeeds */
-    let gather_path = root.join(".gather");
-    let cfg = fs::read_to_string(&gather_path).unwrap();
-    let patched = cfg.replace("first_run_completed=no", "first_run_completed=yes");
-    fs::write(&gather_path, patched).unwrap();
-
-    /* --- 2nd run: should succeed and create output file --- */
+    /* --- 1st run: 成功しつつ .gather を生成 --- */
     Command::cargo_bin("gather")
         .unwrap()
         .current_dir(root)
         .arg(".")
         .assert()
-        .success()
-        .stderr(predicate::str::contains("Done!"));
+        .success() // ← 旧テストは `failure()`
+        .stderr(predicate::str::contains(".gather を生成しました"));
 
-    /* --- output file exists? --- */
+    /* --- .gather が生成されたか --- */
+    assert!(root.join(".gather").exists(), ".gather should exist");
+
+    /* --- 出力ファイルが作成されたか --- */
     let gather_dir = root.join("gather");
-    let entries: Vec<_> = fs::read_dir(&gather_dir).unwrap().collect();
+    let outputs: Vec<_> = fs::read_dir(&gather_dir).unwrap().collect();
     assert!(
-        !entries.is_empty(),
+        !outputs.is_empty(),
         "expected at least one file in {:?}",
         gather_dir
     );
