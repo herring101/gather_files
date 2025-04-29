@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -25,7 +25,7 @@ jobs:
           RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" | \
             jq -r '.id // ""')
-          
+
           if [ -n "$RELEASE_ID" ] && [ "$RELEASE_ID" != "null" ]; then
             echo "Release already exists for tag ${{ github.ref_name }}"
             echo "release_exists=true" >> $GITHUB_OUTPUT
@@ -88,26 +88,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
-      
+
       - name: Install musl-tools (Linux musl only)
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
           sudo apt-get install -y musl-tools
-      
+
       - name: Install cross-compilation tools (ARM Linux only)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-      
+
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -115,7 +115,7 @@ jobs:
           args: --release --target ${{ matrix.target }}
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-      
+
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
@@ -133,33 +133,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Generate install scripts
         run: |
           # PowerShellスクリプトの生成
           cat > install.ps1 << 'EOF'
           $ErrorActionPreference = 'Stop'
-          
+
           $repo = "herring101/gather_files"
           $file = "gather_files-windows-amd64.exe"
           $releases = "https://api.github.com/repos/$repo/releases"
-          
+
           Write-Output "Fetching latest release..."
           $tag = (Invoke-WebRequest $releases | ConvertFrom-Json)[0].tag_name
-          
+
           $download = "https://github.com/$repo/releases/download/$tag/$file"
           $installDir = "$env:LocalAppData\Programs\gather_files"
           $output = "$installDir\gather_files.exe"
-          
+
           if (-not (Test-Path $installDir)) {
               New-Item -ItemType Directory -Path $installDir -Force | Out-Null
           }
-          
+
           Write-Output "Downloading $download..."
           Invoke-WebRequest $download -Out $output
-          
+
           Write-Output "Installing to $output"
-          
+
           $currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
           if (-not $currentPath.Contains($installDir)) {
               Write-Output "Adding installation directory to system PATH..."
@@ -171,18 +171,18 @@ jobs:
               $env:Path = "$env:Path;$installDir"
               Write-Output "PATH has been updated successfully."
           }
-          
+
           Write-Output "Installation completed!"
           Write-Output "You can now run 'gather_files' from your terminal."
           EOF
-          
+
           # シェルスクリプトの生成
           cat > install.sh << 'EOF'
           #!/bin/sh
-          
+
           REPO="herring101/gather_files"
           RELEASES_URL="https://api.github.com/repos/$REPO/releases"
-          
+
           case "$(uname -sm)" in
               "Darwin x86_64")
                   PLATFORM="macos"
@@ -209,19 +209,19 @@ jobs:
                   exit 1
                   ;;
           esac
-          
+
           echo "Detected platform: $PLATFORM-$ARCH"
-          
+
           if ! TAG=$(curl -fsSL $RELEASES_URL | grep -o '"tag_name": "[^"]*' | head -n 1 | cut -d'"' -f4); then
               echo "Failed to fetch latest release information"
               exit 1
           fi
-          
+
           DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$FILE"
           INSTALL_DIR="$HOME/.local/bin"
-          
+
           mkdir -p "$INSTALL_DIR"
-          
+
           echo "Downloading gather_files..."
           if curl -fsSL "$DOWNLOAD_URL" -o "$INSTALL_DIR/gather_files"; then
               chmod +x "$INSTALL_DIR/gather_files"
@@ -250,9 +250,9 @@ jobs:
               exit 1
           fi
           EOF
-          
+
           chmod +x install.sh
-      
+
       - name: Upload Install Scripts
         uses: actions/upload-release-asset@v1
         env:
@@ -262,7 +262,7 @@ jobs:
           asset_path: install.ps1
           asset_name: install.ps1
           asset_content_type: text/plain
-      
+
       - name: Upload Install Script (Shell)
         uses: actions/upload-release-asset@v1
         env:
