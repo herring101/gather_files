@@ -64,18 +64,18 @@ gather_files /path/to/project
 
 ### コマンドラインオプション
 
-| オプション           | 短縮形 | 説明                                     | デフォルト値      |
-| -------------------- | ------ | ---------------------------------------- | ----------------- |
-| --output             | -o     | 出力ファイルのパス                       | gather/output.txt |
-| --config-file        | -c     | 設定ファイルのパス                       | .gather           |
-| --max-lines          | -m     | 各ファイルから読み込む最大行数           | 1000              |
-| --max-file-size      | なし   | スキップするファイルサイズ閾値（バイト） | なし              |
-| --patterns           | -p     | 追加の除外パターン（複数指定可）         | なし              |
-| --skip-patterns      | -s     | 追加の内容スキップパターン（複数指定可） | なし              |
-| --include-patterns   | -i     | 含めるファイルパターン（複数指定可）         | なし              |
-| --use-gitignore      | なし   | .gitignore の内容を[exclude]に統合       | false             |
-| --timestamp          | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
-| --no-open            | なし   | VS Code での自動オープンを無効化         | false             |
+| オプション         | 短縮形 | 説明                                     | デフォルト値      |
+| ------------------ | ------ | ---------------------------------------- | ----------------- |
+| --output           | -o     | 出力ファイルのパス                       | gather/output.txt |
+| --config-file      | -c     | 設定ファイルのパス                       | .gather           |
+| --max-lines        | -m     | 各ファイルから読み込む最大行数           | 1000              |
+| --max-file-size    | なし   | スキップするファイルサイズ閾値（バイト） | なし              |
+| --patterns         | -p     | 追加の除外パターン（複数指定可）         | なし              |
+| --skip-patterns    | -s     | 追加の内容スキップパターン（複数指定可） | なし              |
+| --include-patterns | -i     | 含めるファイルパターン（複数指定可）     | なし              |
+| --use-gitignore    | なし   | .gitignore の内容を[exclude]に統合       | false             |
+| --timestamp        | なし   | 出力ファイル名にタイムスタンプを付与     | false             |
+| --no-open          | なし   | VS Code での自動オープンを無効化         | false             |
 
 ### 使用例
 
@@ -98,18 +98,18 @@ gather_files . -p "*.tmp" -p "build/"
 
 #### [settings]セクション
 
-| 設定キー           | 説明                                       | デフォルト値 |
-| ------------------ | ------------------------------------------ | ------------ |
-| max_lines          | 各ファイルから読み込む最大行数             | 1000         |
-| max_file_size      | スキップするファイルサイズ閾値（バイト）   | なし         |
-| skip_binary        | バイナリファイルをスキップするか           | false        |
-| output_dir         | 出力先ディレクトリ                         | gather       |
-| use_timestamp      | 出力ファイル名にタイムスタンプを付与するか | false        |
-| use_gitignore      | .gitignore の内容を[exclude]に統合するか   | false        |
-| open_output        | VSCode で出力ファイルを自動で開くか        | true         |
-| first_run_completed| 初回実行設定プロセスが完了したか           | false        |
-| max_files_per_dir  | ディレクトリ内のファイル数閾値             | 100          |
-| max_auto_file_size | 自動除外するファイルサイズ閾値（バイト）   | 1000000      |
+| 設定キー            | 説明                                       | デフォルト値 |
+| ------------------- | ------------------------------------------ | ------------ |
+| max_lines           | 各ファイルから読み込む最大行数             | 1000         |
+| max_file_size       | スキップするファイルサイズ閾値（バイト）   | なし         |
+| skip_binary         | バイナリファイルをスキップするか           | false        |
+| output_dir          | 出力先ディレクトリ                         | gather       |
+| use_timestamp       | 出力ファイル名にタイムスタンプを付与するか | false        |
+| use_gitignore       | .gitignore の内容を[exclude]に統合するか   | false        |
+| open_output         | VSCode で出力ファイルを自動で開くか        | true         |
+| first_run_completed | 初回実行設定プロセスが完了したか           | false        |
+| max_files_per_dir   | ディレクトリ内のファイル数閾値             | 100          |
+| max_auto_file_size  | 自動除外するファイルサイズ閾値（バイト）   | 1000000      |
 
 #### [exclude]セクション
 

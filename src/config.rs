@@ -1,160 +1,146 @@
-use std::fs;
-use std::path::Path;
+// src/config.rs
+//! `.gather` 設定ファイルパーサ（簡潔版）
+//! ## 仕様
+//! INI ライクな以下 4 セクションを認識します。
+//! - `[settings]`  キーバリュー
+//! - `[exclude]`   行ベースパターン
+//! - `[skip]`      行ベースパターン
+//! - `[include]`   行ベースパターン
+//!
+//! セクション名・キーはすべて *case-insensitive*。
+
+use std::{collections::HashMap, fs, path::Path};
 
 use crate::model::ConfigParams;
 
-/// 独自フォーマットの .gather を読む
-///
-/// 例:
-/// [settings]
-/// max_lines=1000
-/// max_file_size=1000000
-/// skip_binary=yes
-/// output_dir=out
-/// use_timestamp=no
-/// open_output=yes
-/// use_gitignore=yes
-///
-/// [exclude]
-/// .git
-/// target/
-/// *.md
-///
-/// [skip]
-/// *.pdf
-///
-/// [include]
-/// .rs
-/// .py
-///
+/// 読み込み。存在しなければ `default()` を返す。
 pub fn load_config_file(path: &Path) -> ConfigParams {
-    let mut params = ConfigParams::default();
-    if !path.exists() {
-        return params; // 存在しなければデフォルト
-    }
-
     let content = match fs::read_to_string(path) {
         Ok(s) => s,
-        Err(e) => {
-            eprintln!(
-                "Warning: Could not read config file: {} - {}",
-                path.display(),
-                e
-            );
-            return params;
-        }
+        Err(_) => return ConfigParams::default(),
     };
 
-    let mut current_section = String::new();
+    let mut params = ConfigParams::default();
 
-    for line in content.lines() {
-        let line = line.trim();
-        // 空行やコメント(# など)はスキップ
+    // ---------- settings キー → 更新クロージャ ----------
+    type Setter = fn(&mut ConfigParams, &str);
+    let mut map: HashMap<&str, Setter> = HashMap::new();
+    macro_rules! set_bool {
+        ($field:ident) => {
+            |p: &mut ConfigParams, v: &str| {
+                let b = matches!(v.trim().to_lowercase().as_str(), "yes" | "true" | "1");
+                p.$field = b;
+            }
+        };
+    }
+    map.insert("max_lines", |p, v| {
+        p.max_lines = v.parse().unwrap_or(p.max_lines)
+    });
+    map.insert("max_file_size", |p, v| p.max_file_size = v.parse().ok());
+    map.insert("skip_binary", set_bool!(skip_binary));
+    map.insert("output_dir", |p, v| {
+        if !v.is_empty() {
+            p.output_dir = Some(v.to_string())
+        }
+    });
+    map.insert("use_timestamp", set_bool!(use_timestamp));
+    map.insert("open_output", set_bool!(open_output));
+    map.insert("use_gitignore", set_bool!(use_gitignore));
+    map.insert("first_run_completed", set_bool!(first_run_completed));
+    map.insert("max_files_per_dir", |p, v| {
+        p.max_files_per_dir = v.parse().unwrap_or(p.max_files_per_dir)
+    });
+    map.insert("max_auto_file_size", |p, v| {
+        p.max_auto_file_size = v.parse().unwrap_or(p.max_auto_file_size)
+    });
+
+    // ---------- 行ループ ----------
+    enum Section {
+        None,
+        Settings,
+        Exclude,
+        Skip,
+        Include,
+    }
+    let mut section = Section::None;
+
+    for raw in content.lines() {
+        let line = raw.trim();
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        // セクション行 ([settings], [exclude], etc.)
-        if line.starts_with('[') && line.ends_with(']') {
-            current_section = line[1..line.len() - 1].to_lowercase();
+        if let Some(name) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            section = match name.to_lowercase().as_str() {
+                "settings" => Section::Settings,
+                "exclude" => Section::Exclude,
+                "skip" => Section::Skip,
+                "include" => Section::Include,
+                _ => Section::None,
+            };
             continue;
         }
 
-        match current_section.as_str() {
-            "settings" => {
-                // settings セクションは key=value の形を想定
-                if let Some((k, v)) = parse_key_value(line) {
-                    let k_lower = k.to_lowercase();
-                    match k_lower.as_str() {
-                        "max_lines" => {
-                            if let Ok(n) = v.parse::<usize>() {
-                                params.max_lines = n;
-                            }
-                        }
-                        "max_file_size" => {
-                            if let Ok(n) = v.parse::<u64>() {
-                                params.max_file_size = Some(n);
-                            }
-                        }
-                        "skip_binary" => {
-                            let v_lower = v.to_lowercase();
-                            params.skip_binary = ["yes", "true", "1"].contains(&v_lower.as_str());
-                        }
-                        "output_dir" => {
-                            if !v.is_empty() {
-                                params.output_dir = Some(v);
-                            }
-                        }
-                        "use_timestamp" => {
-                            let v_lower = v.to_lowercase();
-                            params.use_timestamp = ["yes", "true", "1"].contains(&v_lower.as_str());
-                        }
-                        "open_output" => {
-                            let v_lower = v.to_lowercase();
-                            params.open_output = ["yes", "true", "1"].contains(&v_lower.as_str());
-                        }
-                        "use_gitignore" => {
-                            let v_lower = v.to_lowercase();
-                            params.use_gitignore = ["yes", "true", "1"].contains(&v_lower.as_str());
-                        }
-                        "first_run_completed" => {
-                            let v_lower = v.to_lowercase();
-                            params.first_run_completed =
-                                ["yes", "true", "1"].contains(&v_lower.as_str());
-                        }
-                        "max_files_per_dir" => {
-                            if let Ok(n) = v.parse::<usize>() {
-                                params.max_files_per_dir = n;
-                            }
-                        }
-                        "max_auto_file_size" => {
-                            if let Ok(n) = v.parse::<u64>() {
-                                params.max_auto_file_size = n;
-                            }
-                        }
-                        _ => {
-                            eprintln!("Unknown setting key: {}", k);
-                        }
+        match section {
+            Section::Settings => {
+                if let Some((k, v)) = line.split_once('=') {
+                    if let Some(set) = map.get(k.trim().to_lowercase().as_str()) {
+                        set(&mut params, v.trim());
                     }
                 }
             }
-            "exclude" => {
-                // 行内のコメントを除去
-                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
-                if !pattern.is_empty() {
-                    params.exclude_patterns.push(pattern);
-                }
-            }
-            "skip" => {
-                // 行内のコメントを除去
-                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
-                if !pattern.is_empty() {
-                    params.skip_content_patterns.push(pattern);
-                }
-            }
-            "include" => {
-                // 行内のコメントを除去
-                let pattern = line.split('#').next().unwrap_or("").trim().to_string();
-                if !pattern.is_empty() {
-                    params.include_patterns.push(pattern);
-                }
-            }
-            _ => {
-                // それ以外のセクションや行は無視
-            }
+            Section::Exclude => push_pattern(&mut params.exclude_patterns, line),
+            Section::Skip => push_pattern(&mut params.skip_content_patterns, line),
+            Section::Include => push_pattern(&mut params.include_patterns, line),
+            Section::None => {}
         }
     }
-
     params
 }
 
-/// "key=value" をパースして (key, value) を返す
-/// 例: "max_lines=1000" -> Some(("max_lines", "1000"))
-fn parse_key_value(line: &str) -> Option<(String, String)> {
-    let mut split_iter = line.splitn(2, '=');
-    let key = split_iter.next()?.trim();
-    let val = split_iter.next()?.trim();
-    if key.is_empty() {
-        return None;
+fn push_pattern(vec: &mut Vec<String>, line: &str) {
+    let pat = line.split('#').next().unwrap_or("").trim();
+    if !pat.is_empty() {
+        vec.push(pat.to_string());
     }
-    Some((key.to_string(), val.to_string()))
+}
+
+// ---------------------------------------------------------------------
+// tests
+// ---------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    const SAMPLE: &str = r#"
+[settings]
+max_lines=42
+use_gitignore=true
+output_dir=out
+
+[exclude]
+node_modules/
+*.log
+
+[skip]
+*.pdf
+
+[include]
+*.rs
+"#;
+
+    #[test]
+    fn parse_sample() {
+        let mut tmp = NamedTempFile::new().unwrap();
+        write!(tmp, "{}", SAMPLE).unwrap();
+        let cfg = load_config_file(tmp.path());
+
+        assert_eq!(cfg.max_lines, 42);
+        assert!(cfg.use_gitignore);
+        assert_eq!(cfg.output_dir.as_deref(), Some("out"));
+        assert_eq!(cfg.exclude_patterns, vec!["node_modules/", "*.log"]);
+        assert_eq!(cfg.skip_content_patterns, vec!["*.pdf"]);
+        assert_eq!(cfg.include_patterns, vec!["*.rs"]);
+    }
 }

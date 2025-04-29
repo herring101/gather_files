@@ -1,66 +1,108 @@
 // src/scanner/utils.rs
 
-use globset::{Glob, GlobSet, GlobSetBuilder};
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
+//! Utility helpers: binary‑file detection and glob‑pattern normalisation.
 
-/// 簡易バイナリ判定
+use globset::{Glob, GlobSet, GlobSetBuilder};
+use std::{fs::File, io::Read, path::Path};
+
+/// Quick heuristic to decide whether a file is binary.
 pub fn is_binary_file(path: &Path) -> bool {
-    if let Ok(mut f) = File::open(path) {
-        let mut buffer = [0; 1024];
-        if let Ok(n) = f.read(&mut buffer) {
-            let non_text_count = buffer[..n]
-                .iter()
-                .filter(|&&b| b == 0 || (b < 7 || b == 127))
-                .count();
-            // 1/8 以上が非テキストならバイナリ判定
-            return non_text_count > (n / 8);
-        }
+    const SAMPLE: usize = 1024;
+    const NON_TEXT_THRESHOLD: f32 = 0.125;
+
+    let mut buf = [0u8; SAMPLE];
+    let mut file = match File::open(path) {
+        Ok(f) => f,
+        Err(_) => return false,
+    };
+    let n = match file.read(&mut buf) {
+        Ok(n) => n,
+        Err(_) => return false,
+    };
+    if n == 0 {
+        return false;
     }
-    false
+
+    let non_text = buf[..n]
+        .iter()
+        .filter(|&&b| b == 0 || (b < 0x09 && b != b'\n' && b != b'\r') || b == 0x7F)
+        .count();
+    (non_text as f32) / (n as f32) > NON_TEXT_THRESHOLD
 }
 
-/// GlobSetを構築
+/// Build a [`GlobSet`] from user‑supplied glob patterns.
+///
+/// Normalisation rules:
+/// * `dir/`   ⇒ `**/dir`, `**/dir/**`, `dir/**`
+/// * `.rs`    ⇒ `**/*.rs`
+/// * `foo.md` ⇒ `**/foo.md`
 pub fn build_globset(patterns: &[String]) -> Option<GlobSet> {
     if patterns.is_empty() {
         return None;
     }
+
     let mut builder = GlobSetBuilder::new();
-    for pat in patterns {
-        // パターンの標準化
-        let expanded = if pat.ends_with('/') {
-            format!("{}**", pat) // ディレクトリパターンの場合
-        } else if pat.starts_with('.')
-            && pat.len() > 1
-            && pat.chars().skip(1).all(|c| !c.is_whitespace() && c != '/')
-        {
-            // 拡張子のみの指定の場合（例: .py）
-            format!("**/*{}", pat)
-        } else if !pat.contains('/') && !pat.contains('*') {
-            // ファイル名のみの場合
-            format!("**/{}", pat)
+    let mut add = |pat: &str| match Glob::new(pat) {
+        Ok(g) => {
+            builder.add(g);
+        }
+        Err(e) => eprintln!("invalid glob '{}': {}", pat, e),
+    };
+
+    for raw in patterns {
+        if raw.ends_with('/') {
+            let dir = raw.trim_end_matches('/');
+            // directory itself at any depth
+            add(&format!("**/{}", dir));
+            // anything under that directory at any depth
+            add(&format!("**/{}/**", dir));
+            // top‑level convenience (backward compat)
+            add(&format!("{}/**", dir));
+        } else if raw.starts_with('.') && !raw.contains('/') && !raw.contains('*') {
+            // extension only
+            add(&format!("**/*{}", raw));
+        } else if !raw.contains('/') && !raw.contains('*') {
+            // plain filename
+            add(&format!("**/{}", raw));
         } else {
-            // その他のパターン（すでに**やワイルドカードが含まれている場合はそのまま）
-            pat.clone()
-        };
-
-        eprintln!("Processing pattern: '{}' -> '{}'", pat, expanded);
-
-        match Glob::new(&expanded) {
-            Ok(g) => {
-                builder.add(g);
-            }
-            Err(e) => {
-                eprintln!("Warning: invalid glob pattern '{}': {}", pat, e);
-            }
+            add(raw);
         }
     }
-    match builder.build() {
-        Ok(gs) => Some(gs),
-        Err(e) => {
-            eprintln!("Error building globset: {}", e);
-            None
-        }
+
+    builder.build().ok()
+}
+
+// ---------------------------------------------------------------------
+// tests
+// ---------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn gs(pats: &[&str]) -> GlobSet {
+        build_globset(&pats.iter().map(|s| s.to_string()).collect::<Vec<_>>()).unwrap()
+    }
+
+    #[test]
+    fn dir_pattern_covers_all_cases() {
+        let g = gs(&["gather/"]);
+        assert!(g.is_match(Path::new("gather")));
+        assert!(g.is_match(Path::new("gather/output.txt")));
+        assert!(g.is_match(Path::new("a/b/gather")));
+        assert!(g.is_match(Path::new("a/b/gather/file")));
+    }
+
+    #[test]
+    fn ext_pattern_matches_any_depth() {
+        let g = gs(&[".rs"]);
+        assert!(g.is_match(Path::new("src/main.rs")));
+        assert!(g.is_match(Path::new("deep/lib.rs")));
+    }
+
+    #[test]
+    fn filename_pattern_matches() {
+        let g = gs(&["Cargo.toml"]);
+        assert!(g.is_match(Path::new("Cargo.toml")));
+        assert!(g.is_match(Path::new("nested/Cargo.toml")));
     }
 }

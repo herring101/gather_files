@@ -1,6 +1,6 @@
 [package]
 name = "gather_files"
-version = "0.2.7"
+version = "0.2.8"
 edition = "2021"
 description = "Gather project files for LLM processing"
 authors = ["herring101"]
@@ -14,7 +14,9 @@ categories = ["development-tools", "command-line-utilities"]
 chrono = "0.4.39"
 walkdir = "2.5.0"
 globset = "0.4.15"
-clap = "4.5.23"
+# Enable derive macros for clap so `#[derive(Parser)]` works
+clap = { version = "4.5.23", features = ["derive"] }
 
 [dev-dependencies]
+# keep tempfile for unit tests
 tempfile = "3.14.0"
