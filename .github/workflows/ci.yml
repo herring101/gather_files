@@ -11,10 +11,16 @@ env:
 
 jobs:
   check:
-    name: Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -25,10 +31,16 @@ jobs:
           command: check
 
   test:
-    name: Test Suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -39,10 +51,16 @@ jobs:
           command: test
 
   fmt:
-    name: Rustfmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -55,10 +73,16 @@ jobs:
           args: --all -- --check
 
   clippy:
-    name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -71,15 +95,43 @@ jobs:
           args: -- -D warnings
 
   coverage:
-    name: Coverage
     runs-on: ubuntu-latest
+    env:
+      SCCACHE_GHA_ENABLED: "on" # ← GitHub-Actions キャッシュを sccache が使用
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # sccache setup (no inputs needed)
+      - name: Enable sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - uses: actions-rs/toolchain@v1
         with:
+          profile: minimal
           toolchain: stable
-      - uses: actions-rs/cargo@v1
+          override: true
+
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin --locked --version ^0.27
+
+      - name: Run tarpaulin
+        run: |
+          cargo tarpaulin \
+            --workspace \
+            --skip-clean \
+            --ignore-tests \
+            --no-default-features \
+            --line \
+            --out Lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          command: install
-          args: cargo-tarpaulin
-      - run: cargo tarpaulin --workspace --all-features --line --skip-clean
+          files: lcov.info
