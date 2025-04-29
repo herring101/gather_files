@@ -55,7 +55,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: cargo test
-        run: cargo test --all-features --all-targets --locked
+        run: cargo test --all-features --all-targets
 
   # -----------------------------------------------------------------
   # Type‑check only (fast feedback)

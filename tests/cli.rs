@@ -18,7 +18,7 @@ fn first_run_creates_gather_then_success_on_second_run() {
     /* --- 1st run: should create .gather and exit with non-zero --- */
     Command::cargo_bin("gather_files")
         .unwrap()
-        .current_dir(&root) // run inside temp dir for cleaner paths
+        .current_dir(root) // run inside temp dir for cleaner paths
         .arg(".") // scan current directory
         .assert()
         .failure()
@@ -33,7 +33,7 @@ fn first_run_creates_gather_then_success_on_second_run() {
     /* --- 2nd run: should succeed and create output file --- */
     Command::cargo_bin("gather_files")
         .unwrap()
-        .current_dir(&root)
+        .current_dir(root)
         .arg(".")
         .assert()
         .success()
