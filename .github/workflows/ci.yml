@@ -6,132 +6,103 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Common environment settings
 env:
   CARGO_TERM_COLOR: always
+  # Use the compiler cache everywhere
+  RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: "true"
+
+permissions:
+  contents: read
 
 jobs:
-  check:
+  # -----------------------------------------------------------------
+  # Linting (fmt + clippy)
+  # -----------------------------------------------------------------
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
 
+      - name: Enable sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: rustfmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+  # -----------------------------------------------------------------
+  # Build and run tests
+  # -----------------------------------------------------------------
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
 
-  fmt:
+      - uses: mozilla-actions/sccache-action@v0.0.9
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo test
+        run: cargo test --all-features --all-targets --locked
+
+  # -----------------------------------------------------------------
+  # Type‑check only (fast feedback)
+  # -----------------------------------------------------------------
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
 
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+      - uses: mozilla-actions/sccache-action@v0.0.9
 
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo check
+        run: cargo check --workspace --all-targets --all-features --locked
+
+  # -----------------------------------------------------------------
+  # Coverage (llvm‑cov + Codecov)
+  # -----------------------------------------------------------------
   coverage:
     runs-on: ubuntu-latest
-    env:
-      SCCACHE_GHA_ENABLED: "on" # ← GitHub-Actions キャッシュを sccache が使用
+    # Only run coverage for pushes or for PRs from inside the repository
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+
+      - uses: mozilla-actions/sccache-action@v0.0.9
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          components: llvm-tools-preview
 
-      # sccache setup (no inputs needed)
-      - name: Enable sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: Swatinem/rust-cache@v2
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin --locked --version ^0.27
-
-      - name: Run tarpaulin
+      - name: Generate coverage report
         run: |
-          cargo tarpaulin \
-            --workspace \
-            --skip-clean \
-            --ignore-tests \
-            --no-default-features \
-            --line \
-            --out Lcov
+          cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
 
-      - name: Upload coverage to Codecov
+      - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
           files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
