@@ -1,6 +1,6 @@
 [package]
 name        = "gather_files"
-version = "0.3.2"
+version = "0.4.0"
 edition     = "2021"
 description = "Gather project files for LLM processing"
 authors     = ["herring101"]
@@ -17,6 +17,9 @@ walkdir = "2.5.0"
 globset = "0.4.15"
 clap    = { version = "4.5.23", features = ["derive"] }
 self_update = { version = "0.42", default-features = false, features = ["rustls"] }
+syn = { version = "2.0", features = ["full", "extra-traits", "visit"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [dev-dependencies]
 assert_cmd = "2.0"

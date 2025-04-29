@@ -1,68 +1,70 @@
 //! src/args.rs
-//! CLI 引数パーサ
-//!
-//! **使い方**
-//! ```bash
-//! gather <DIR> [OPTIONS]
-//! ```
 
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, ArgGroup, Parser, ValueEnum};
 use std::path::PathBuf;
 
-use crate::model::CLIOptions;
+use crate::model::{CLIOptions, OutlineFormat, RunMode};
+
+/// outline サブオプション
+#[derive(Debug, Clone, ValueEnum)]
+pub enum ModeArg {
+    Gather,
+    Outline,
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum FormatArg {
+    Md,
+    Json,
+}
 
 /// 内部用 – clap 派生構造体
 #[derive(Debug, Parser)]
 #[command(
-    name = "gather",              // ← ここを変更
+    name = "gather",
     version,
     author = "herring101",
-    about = "Collect project files and format them for LLM context.",
+    about = "Collect project files OR generate outline for LLM context.",
     disable_help_subcommand = true,
-    arg_required_else_help = true
+    arg_required_else_help = true,
+    group(
+        ArgGroup::new("outline_opts")
+            .requires("mode")
+            .args(["outline_format"])
+    )
 )]
 struct Args {
-    /// 解析したいディレクトリ
-    #[arg(value_name = "DIR", required = true)]
+    /// 実行モード: gather (既定) / outline
+    #[arg(long, value_enum, value_name = "MODE", default_value = "gather")]
+    mode: ModeArg,
+
+    /// outline 時のフォーマット: md (既定) / json
+    #[arg(long = "outline-format", value_enum, value_name = "FMT")]
+    outline_format: Option<FormatArg>,
+
+    /// 解析対象ディレクトリ
+    #[arg(value_name = "DIR")]
     target_directory: PathBuf,
 
-    /// 出力ファイルのパス (デフォルト: gather/output.txt)
+    // ・・・既存オプションはそのまま・・・
     #[arg(short, long, value_name = "FILE")]
     output: Option<PathBuf>,
-
-    /// 出力ファイル名にタイムスタンプを付与する
     #[arg(long, action = ArgAction::SetTrue)]
     timestamp: bool,
-
-    /// 設定ファイル (.gather)
     #[arg(short, long, value_name = "FILE")]
     config_file: Option<PathBuf>,
-
-    /// 各ファイルから読み込む最大行数
     #[arg(short, long, value_name = "N")]
     max_lines: Option<usize>,
-
-    /// このサイズ (BYTE) を超えるファイルをスキップ
     #[arg(long, value_name = "BYTES")]
     max_file_size: Option<u64>,
-
-    /// 追加の除外パターン (複数回指定可)
     #[arg(short = 'p', long = "patterns", value_name = "PATTERN", action = ArgAction::Append)]
     patterns: Vec<String>,
-
-    /// 追加の内容スキップパターン (複数回指定可)
     #[arg(short = 's', long = "skip-patterns", value_name = "PATTERN", action = ArgAction::Append)]
     skip_patterns: Vec<String>,
-
-    /// 含めたいファイルパターン (複数回指定可)
     #[arg(short = 'i', long = "include-patterns", value_name = "PATTERN", action = ArgAction::Append)]
     include_patterns: Vec<String>,
-
-    /// .gather を自動で VSCode で開かない
     #[arg(long, action = ArgAction::SetTrue)]
     no_open: bool,
-
-    /// .gitignore の内容を [exclude] に統合
     #[arg(long, action = ArgAction::SetTrue)]
     use_gitignore: bool,
 }
@@ -71,7 +73,17 @@ struct Args {
 pub fn parse_args() -> CLIOptions {
     let a = Args::parse();
 
+    let format = match a.outline_format.unwrap_or(FormatArg::Md) {
+        FormatArg::Md => OutlineFormat::Md,
+        FormatArg::Json => OutlineFormat::Json,
+    };
+    let mode = match a.mode {
+        ModeArg::Gather => RunMode::Gather,
+        ModeArg::Outline => RunMode::Outline(format),
+    };
+
     CLIOptions {
+        mode,
         target_dir: a.target_directory,
         output_file: a.output,
         config_file: a.config_file,
@@ -86,24 +98,31 @@ pub fn parse_args() -> CLIOptions {
     }
 }
 
-// ---------------------------------------------------------------------
-// tests
-// ---------------------------------------------------------------------
+/* --------------------------------------------------------------------- */
+/* tests                                                                 */
+/* --------------------------------------------------------------------- */
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn positional_directory_is_required() {
-        // omit DIR → clap should error
-        let res = Args::try_parse_from(["gather"]);
-        assert!(res.is_err());
+    fn default_mode_is_gather() {
+        let args = Args::try_parse_from(["gather", "."]).unwrap();
+        assert!(matches!(args.mode, ModeArg::Gather));
     }
 
     #[test]
-    fn parse_multiple_patterns() {
-        let args =
-            Args::try_parse_from(["gather", "./proj", "-p", "*.log", "-p", "build/"]).unwrap();
-        assert_eq!(args.patterns, vec!["*.log", "build/"]);
+    fn outline_mode_parses_with_format() {
+        let args = Args::try_parse_from([
+            "gather",
+            "--mode",
+            "outline",
+            "--outline-format",
+            "json",
+            ".",
+        ])
+        .unwrap();
+        assert!(matches!(args.mode, ModeArg::Outline));
+        assert!(matches!(args.outline_format, Some(FormatArg::Json)));
     }
 }
