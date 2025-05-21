@@ -1,6 +1,6 @@
 # gather_files
 
-_gather_files_ は、プロジェクトのソースコードを **LLM（Large Language Model）** に理解させやすい形で収集・整形する CLI ツールです。
+_gather_files_ は、プロジェクトのソースコードを **LLM（Large Language Model）** に理解させやすい形で収集・整形する CLI ツールです
 
 > v0.3 からコマンド名は **`gather`** にリネームされました。
 >
