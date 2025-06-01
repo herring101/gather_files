@@ -13,7 +13,7 @@ _gather_files_ は、プロジェクトのソースコードを **LLM（Large La
 | 機能カテゴリ                          | 概要                                                                                                                                                             |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ファイル収集 (gather モード)**      | `.gitignore` & 独自設定 `.gather` を組み合わせ、必要ファイルだけを再帰的に収集・整形します。スキップされたファイルはツリー上に `[omitted:<reason>]` として注釈。 |
-| **アウトライン抽出 (outline モード)** | **NEW!** Rust ファイル (`.rs`) から公開シンボル (`pub struct` / `fn` など) を抽出し、Markdown または JSON で一覧を生成します。今後多言語対応予定。               |
+| **アウトライン抽出 (outline モード)** | **NEW!** Rust / Python ファイル (`.rs` / `.py`) から公開シンボル (`pub struct` / `def` など) を抽出し、Markdown または JSON で一覧を生成します。 |
 | **自己アップデート**                  | `gather self-update` で GitHub Releases から最新バイナリをダウンロードし実行ファイルを置換。                                                                     |
 | **インストールスクリプト**            | macOS / Linux / Windows 用のワンライナーを同梱。                                                                                                                 |
 
@@ -49,7 +49,7 @@ cargo install --git https://github.com/herring101/gather_files --bin gather --fo
 gather .
 ```
 
-### 2) Rust 公開シンボルのアウトラインだけ欲しい
+### 2) Rust / Python 公開シンボルのアウトラインだけ欲しい
 
 ```bash
 # outline モード（Markdown 出力）

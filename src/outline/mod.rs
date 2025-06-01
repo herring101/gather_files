@@ -1,6 +1,7 @@
 mod provider;
 pub mod registry;
 mod rust; // ← pub にした
+mod python;
 
 use crate::model::OutlineFormat;
 use provider::Symbol;

@@ -6,6 +6,7 @@ use once_cell::sync::Lazy;
 
 use super::provider::{OutlineProvider, Symbol};
 use super::rust::RustOutlineProvider;
+use super::python::PythonOutlineProvider;
 
 /* ---------- トレイト ---------- */
 
@@ -34,6 +35,7 @@ type DynProviderBox = Box<dyn DynProvider>;
 static PROVS: Lazy<Vec<DynProviderBox>> = Lazy::new(|| {
     vec![
         Box::new(RustOutlineProvider) as DynProviderBox,
+        Box::new(PythonOutlineProvider) as DynProviderBox,
         // 今後言語を追加するときはここに push!
     ]
 });
